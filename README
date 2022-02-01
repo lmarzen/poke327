@@ -1,0 +1,10 @@
+Program outputs a randomly generated region using radial growth from a random seed. Each region is populated with 2 randomly generated pathes traverse N-S and E-W, a poke center and a poke mart.
+Key
+---
+Boulder:     %
+Tree:        ^
+Poke Center: C
+Poke Mart:   M 
+Path:        #
+Grass:       :
+Clearing:    .
