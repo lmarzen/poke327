@@ -8,7 +8,7 @@
 #define MAX_COL 80
 
 #define MIN_SEEDS_PER_REGION 6 // at least 2 grass and 2 clearings seeds. (req)
-#define MAX_SEEDS_PER_REGION 16
+#define MAX_SEEDS_PER_REGION 10
 
 #define CHAR_BOULDER '%';
 #define CHAR_TREE '^';
@@ -240,13 +240,13 @@ void init_region (region_t *region,
                   + 0.5*(rand() % 10); // ensure random progress is made towards exit
     if (path_i - 1 != 0 && 
         region->tile_arr[path_i - 1][path_j].ter != ter_path) {
-      N_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j,  path_i - 1) - dist_to_seed) // prefer terrain boarders
+      N_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j,  path_i - 1) - dist_to_seed) // prefer terrain boarders
                     + 0.05*path_j*(dist_to_exit - distance(MAX_COL - 1, region->E_exit_i, path_j, path_i - 1)) // head towards the exit especially near the end
                     + 0.05*path_i; // dont hug walls
     }
     if (path_i + 1 != MAX_ROW - 1 &&
         region->tile_arr[path_i + 1][path_j].ter != ter_path) {
-      S_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed) // prefer terrain boarders
+      S_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed) // prefer terrain boarders
                     + 0.05*path_j*(dist_to_exit - distance(MAX_COL - 1, region->E_exit_i, path_j, path_i + 1)) //  head towards the exit especially near the end
                     + 0.05*(MAX_ROW - path_i); // dont hug walls
     }
@@ -303,13 +303,13 @@ void init_region (region_t *region,
                   + 0.5*(rand() % 10);
     if (path_j + 1 != MAX_COL - 1 && 
         region->tile_arr[path_i][path_j + 1].ter != ter_path) {
-      E_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
+      E_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
                     + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j + 1, path_i))
                     + 0.05*(MAX_COL - path_j); // dont hug walls;;
     }
     if (path_j - 1 != 0 &&
         region->tile_arr[path_i][path_j - 1].ter != ter_path) {
-      W_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
+      W_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
                     + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j - 1, path_i))
                     + 0.05*path_j; // dont hug walls;
     }
@@ -359,7 +359,78 @@ void init_region (region_t *region,
     region->tile_arr[path_i][path_j].ch = CHAR_PATH; 
   }
 
-free (seed_arr);
+  free (seed_arr);
+
+  // randomly select tiles and place a poke center if location is valid
+  // poke centers must be placed next to a path'
+  int32_t center_placed = 0;
+  while (center_placed == 0) {
+    pos_t c_seed;
+    c_seed.i = (rand() % (MAX_ROW - 4)) + 1;
+    c_seed.j = (rand() % (MAX_COL - 4)) + 1;
+
+    if ( region->tile_arr[c_seed.i][c_seed.j].ter != ter_path
+      && region->tile_arr[c_seed.i + 1][c_seed.j].ter != ter_path
+      && region->tile_arr[c_seed.i][c_seed.j + 1].ter != ter_path
+      && region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter != ter_path
+      && 
+      (
+           region->tile_arr[c_seed.i - 1][c_seed.j].ter == ter_path
+        || region->tile_arr[c_seed.i - 1][c_seed.j + 1].ter == ter_path
+        || region->tile_arr[c_seed.i][c_seed.j - 1].ter == ter_path
+        || region->tile_arr[c_seed.i + 1][c_seed.j - 1].ter == ter_path
+        || region->tile_arr[c_seed.i][c_seed.j + 2].ter == ter_path
+        || region->tile_arr[c_seed.i + 1][c_seed.j + 2].ter == ter_path
+        || region->tile_arr[c_seed.i + 2][c_seed.j].ter == ter_path
+        || region->tile_arr[c_seed.i + 2][c_seed.j + 1].ter == ter_path
+      ) ) {
+      region->tile_arr[c_seed.i][c_seed.j].ter = ter_center;
+      region->tile_arr[c_seed.i][c_seed.j].ch = CHAR_CENTER;
+      region->tile_arr[c_seed.i + 1][c_seed.j].ter = ter_center;
+      region->tile_arr[c_seed.i + 1][c_seed.j].ch = CHAR_CENTER;
+      region->tile_arr[c_seed.i][c_seed.j + 1].ter = ter_center;
+      region->tile_arr[c_seed.i][c_seed.j + 1].ch = CHAR_CENTER;
+      region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter = ter_center;
+      region->tile_arr[c_seed.i + 1][c_seed.j + 1].ch = CHAR_CENTER;
+      center_placed = 1;
+    }
+  }
+
+  int32_t mart_placed = 0;
+  while (mart_placed == 0) {
+    pos_t c_seed;
+    c_seed.i = (rand() % (MAX_ROW - 4)) + 1;
+    c_seed.j = (rand() % (MAX_COL - 4)) + 1;
+
+    if ( region->tile_arr[c_seed.i][c_seed.j].ter != ter_path
+      && region->tile_arr[c_seed.i + 1][c_seed.j].ter != ter_path
+      && region->tile_arr[c_seed.i][c_seed.j + 1].ter != ter_path
+      && region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter != ter_path
+      && region->tile_arr[c_seed.i][c_seed.j].ter != ter_center
+      && region->tile_arr[c_seed.i + 1][c_seed.j].ter != ter_center
+      && region->tile_arr[c_seed.i][c_seed.j + 1].ter != ter_center
+      && region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter != ter_center
+      && 
+      (    region->tile_arr[c_seed.i - 1][c_seed.j].ter == ter_path
+        || region->tile_arr[c_seed.i - 1][c_seed.j + 1].ter == ter_path
+        || region->tile_arr[c_seed.i][c_seed.j - 1].ter == ter_path
+        || region->tile_arr[c_seed.i + 1][c_seed.j - 1].ter == ter_path
+        || region->tile_arr[c_seed.i][c_seed.j + 2].ter == ter_path
+        || region->tile_arr[c_seed.i + 1][c_seed.j + 2].ter == ter_path
+        || region->tile_arr[c_seed.i + 2][c_seed.j].ter == ter_path
+        || region->tile_arr[c_seed.i + 2][c_seed.j + 1].ter == ter_path
+      ) ) {
+      region->tile_arr[c_seed.i][c_seed.j].ter = ter_mart;
+      region->tile_arr[c_seed.i][c_seed.j].ch = CHAR_MART;
+      region->tile_arr[c_seed.i + 1][c_seed.j].ter = ter_mart;
+      region->tile_arr[c_seed.i + 1][c_seed.j].ch = CHAR_MART;
+      region->tile_arr[c_seed.i][c_seed.j + 1].ter = ter_mart;
+      region->tile_arr[c_seed.i][c_seed.j + 1].ch = CHAR_MART;
+      region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter = ter_mart;
+      region->tile_arr[c_seed.i + 1][c_seed.j + 1].ch = CHAR_MART;
+      mart_placed = 1;
+    }
+  }
 
   return;
 }

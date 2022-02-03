@@ -1,2 +1,3 @@
 01/31/2022 - Started project, created enums that represent tiles in a region, created function to print a region
-02/01/2022 - Implemented randomly generated terrain. (no pathes, centers or marts yet)
+02/01/2022 - Implemented randomly generated terrain. (no paths, centers or marts yet)
+02/02/2022 - Implemented randomly generated paths. Added poke centers and poke marts.
