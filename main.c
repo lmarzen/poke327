@@ -80,7 +80,7 @@ void print_region (region_t *region) {
 
 /*
  * Initialize a region
- * Pathes exit points will be generated as specified.
+ * Path exit points will be generated at the locations specified.
  * For random path exit point specify -1
  */
 void init_region (region_t *region, 
@@ -300,17 +300,18 @@ void init_region (region_t *region,
     double dist_to_seed = distance(closest_seed->j, closest_seed->i, path_j, path_i);
     double dist_to_exit = distance(region->S_exit_j, MAX_ROW - 1, path_j, path_i);
     S_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed)
-                  + 0.008*(pow((path_i - MAX_ROW), 2))
-                  + 0.05*(rand() % 10);
+                  + 0.5*(rand() % 10);
     if (path_j + 1 != MAX_COL - 1 && 
         region->tile_arr[path_i][path_j + 1].ter != ter_path) {
-      E_path_weight = 3*(distance(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
-                    + 0.5*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j + 1, path_i));
+      E_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
+                    + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j + 1, path_i))
+                    + 0.05*(MAX_COL - path_j); // dont hug walls;;
     }
     if (path_j - 1 != 0 &&
         region->tile_arr[path_i][path_j - 1].ter != ter_path) {
-      W_path_weight = 3*(distance(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
-                    + 0.5*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j - 1, path_i));
+      W_path_weight = 0.8*(distance(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
+                    + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j - 1, path_i))
+                    + 0.05*path_j; // dont hug walls;
     }
 
     if(S_path_weight >= E_path_weight && S_path_weight >= W_path_weight) {
@@ -320,6 +321,29 @@ void init_region (region_t *region,
     } else {
       --path_j;
     }
+
+    // if we interest the W->E path, the follow it for a random amount of tiles
+    if (region->tile_arr[path_i][path_j].ter == ter_path) {
+      int32_t num_tiles_to_trace = rand() % (MAX_COL/2);
+      // follow either E or W, whatever will lead us closer the the S exit
+      int32_t heading = 1; // 1 is E, -1 is W
+      if (path_j > S_exit_j) {
+        heading = -1;
+      }
+      while (num_tiles_to_trace != 0 && path_j > 1 && path_j < MAX_COL - 2 && path_i != MAX_ROW - 3) {
+        if (region->tile_arr[path_i][path_j + heading].ter  == ter_path) {
+          path_j += heading;
+          --num_tiles_to_trace;
+        } else if (region->tile_arr[path_i + 1][path_j].ter  == ter_path) {
+          ++path_i;
+          --num_tiles_to_trace;
+        } else if (region->tile_arr[path_i - 1][path_j].ter  == ter_path) {
+            --path_i;
+            --num_tiles_to_trace;
+        }
+      }
+    }
+
     region->tile_arr[path_i][path_j].ter = ter_path;
     region->tile_arr[path_i][path_j].ch = CHAR_PATH;
   }
