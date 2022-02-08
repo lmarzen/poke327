@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+
+// Printed region dimensions 
 #define MAX_ROW 21
 #define MAX_COL 80
+
+// world dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
+#define WORLD_SIZE 399
 
 #define MIN_SEEDS_PER_REGION 6 // at least 2 grass and 2 clearings seeds. (req)
 #define MAX_SEEDS_PER_REGION 10
@@ -86,10 +91,7 @@ void print_region (region_t *region) {
 void init_region (region_t *region, 
                   int32_t N_exit_j, int32_t E_exit_i,
                   int32_t S_exit_j, int32_t W_exit_i) {
-  struct timeval t;
-  gettimeofday(&t, NULL);
-  srand(t.tv_usec * t.tv_sec);
-  int32_t randy;
+  int32_t randy; // note... int num = (rand() % (upper - lower + 1)) + lower;
 
   // create a random number of random seeds
   int32_t num_seeds = (rand() % (MAX_SEEDS_PER_REGION - MIN_SEEDS_PER_REGION + 1)) 
@@ -115,9 +117,26 @@ void init_region (region_t *region,
 
   //  remaining seeds get random terrain type
   for (int32_t i = 4; i < num_seeds; i++) {
+    randy = rand() % 5; 
     seed_arr[i]->i = rand() % MAX_ROW;
     seed_arr[i]->j = rand() % MAX_COL;
-    seed_arr[i]->ter = (rand() % (ter_mixed3 - ter_grass0 + 1)) + ter_grass0; 
+    switch (randy) {
+      case 0:
+        seed_arr[i]->ter = ter_boulder;
+        break;
+      case 1:
+        seed_arr[i]->ter = ter_tree;
+        break;
+      case 2:
+        seed_arr[i]->ter = ter_grass0;
+        break;
+      case 3:
+        seed_arr[i]->ter = ter_clearing0;
+        break;
+      case 4:
+        seed_arr[i]->ter = ter_mixed0;
+        break;
+    }
   }
 
   // populate each tile by assigning it the terrain type of the closest seed
@@ -142,6 +161,12 @@ void init_region (region_t *region,
 
         region->tile_arr[i][j].ter = closest_seed->ter;
         switch (region->tile_arr[i][j].ter) {
+          case ter_boulder:
+            region->tile_arr[i][j].ch = CHAR_BOULDER;
+            break;
+          case ter_tree:
+            region->tile_arr[i][j].ch = CHAR_TREE;
+            break;
           case ter_grass0:
           case ter_grass1:
           case ter_grass2:
@@ -437,14 +462,66 @@ void init_region (region_t *region,
 
 int main (int argc, char *argv[])
 {
-  // Allocate memory for a region
-  region_t *region = malloc(sizeof(region_t));
+  struct timeval t;
+  uint32_t seed;
+  if (argc == 2) {
+    seed = atoi(argv[1]);
+  } else {
+    gettimeofday(&t, NULL);
+    seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
+  }
+  printf("Using seed: %u\n", seed);
+  srand(seed);
 
+  // start in center of the world. 
+  // The center of the world may also be referred to as (0,0)
+  uint32_t region_x = WORLD_SIZE/2;
+  uint32_t region_y = WORLD_SIZE/2;
+  // Allocate memory for initial region
+  region_t *region = malloc(sizeof(region_t));
   init_region(region, -1, -1, -1, -1);
   print_region(region);
 
+  char user_in = 0;
+  int32_t tmp_x = INT32_MIN;
+  int32_t tmp_y = INT32_MIN;
+  while(user_in != 'q') { 
+    scanf("%c", &user_in);  
+    switch (user_in) {
+      case 'n':
+        break;
+      case 'e':
+        break;
+      case 's':
+        break;
+      case 'w':
+        break;
+      case 'f':
+        scanf(" %d %d", &tmp_x, &tmp_y);
+        if (abs(tmp_x) <= WORLD_SIZE/2 && abs(tmp_y) <= WORLD_SIZE/2) {
+          region_x = tmp_x + WORLD_SIZE/2;
+          region_y = tmp_y + WORLD_SIZE/2;
+        } else {
+          printf("Invalid input, coordinates entered are out of bounds.\n");
+        }
+
+        printf("%d %d\n", tmp_x, tmp_y);
+        
+        break;
+      case 'q':
+        // do nothing, while loop will break on after completion of this iteration
+        break;
+      case ' ':
+      case 10:
+        // do nothing, ignore spaces and linefeed characters
+        break;
+      default:
+        printf("Invalid input.\n");
+        break;
+    }
+  }
+
   free(region);
-  // note ... int num = (rand() % (upper - lower + 1)) + lower;
 
   return 0;
 }
