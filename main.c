@@ -67,8 +67,23 @@ typedef struct region {
 /*
  * returns the distance between 2 points
  */
-double distance(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
+double dist(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+/*
+ * returns the manhatten distance between 2 points
+ */
+int32_t m_dist(int32_t x1, int32_t y1, int32_t x2, int32_t y2) {
+   return abs(x2 - x1) + abs(y2 - y1);
+}
+
+/*
+ * Will decide if an event occurs given its probability
+ * returns 1 if an event should happen, otherwise 0.
+ */
+int32_t rand_outcome(double probability) {
+   return rand() < probability * ((double)RAND_MAX + 1.0);
 }
 
 /*
@@ -87,10 +102,15 @@ void print_region (region_t *region) {
  * Initialize a region
  * Path exit points will be generated at the locations specified.
  * For random path exit point specify -1
+ *
+ * place_center and place_mart parameters specify whether or not to place a 
+ * poke center and/or a poke mart in a region. 0 to not place a building, 
+ * 1 to place a building
  */
 void init_region (region_t *region, 
                   int32_t N_exit_j, int32_t E_exit_i,
-                  int32_t S_exit_j, int32_t W_exit_i) {
+                  int32_t S_exit_j, int32_t W_exit_i,
+                  int32_t place_center, int32_t place_mart) {
   int32_t randy; // note... int num = (rand() % (upper - lower + 1)) + lower;
 
   // create a random number of random seeds
@@ -117,7 +137,7 @@ void init_region (region_t *region,
 
   //  remaining seeds get random terrain type
   for (int32_t i = 4; i < num_seeds; i++) {
-    randy = rand() % 5; 
+    randy = rand() % 8; 
     seed_arr[i]->i = rand() % MAX_ROW;
     seed_arr[i]->j = rand() % MAX_COL;
     switch (randy) {
@@ -128,12 +148,15 @@ void init_region (region_t *region,
         seed_arr[i]->ter = ter_tree;
         break;
       case 2:
+      case 3:
         seed_arr[i]->ter = ter_grass0;
         break;
-      case 3:
+      case 4:
+      case 5:
         seed_arr[i]->ter = ter_clearing0;
         break;
-      case 4:
+      case 6:
+      case 7:
         seed_arr[i]->ter = ter_mixed0;
         break;
     }
@@ -149,10 +172,10 @@ void init_region (region_t *region,
         region->tile_arr[i][j].ch = CHAR_BOULDER;
       } else {
         seed_t *closest_seed = seed_arr[0];
-        double closest_dist = distance(seed_arr[0]->j, seed_arr[0]->i, j, i);
+        double closest_dist = dist(seed_arr[0]->j, seed_arr[0]->i, j, i);
 
         for (int32_t k = 1; k < num_seeds; k++) {
-          double temp_dist = distance(seed_arr[k]->j, seed_arr[k]->i, j, i);
+          double temp_dist = dist(seed_arr[k]->j, seed_arr[k]->i, j, i);
           if (temp_dist < closest_dist) {
             closest_seed = seed_arr[k];
             closest_dist = temp_dist;
@@ -243,9 +266,9 @@ void init_region (region_t *region,
   while (path_j != MAX_COL - 2) {
     // find the closest seed
     seed_t *closest_seed = seed_arr[0];
-    double closest_dist = distance(seed_arr[0]->j, seed_arr[0]->i, path_j, path_i);
+    double closest_dist = dist(seed_arr[0]->j, seed_arr[0]->i, path_j, path_i);
     for (int32_t k = 1; k < num_seeds; k++) {
-      double temp_dist = distance(seed_arr[k]->j, seed_arr[k]->i, path_j, path_i);
+      double temp_dist = dist(seed_arr[k]->j, seed_arr[k]->i, path_j, path_i);
       if (temp_dist < closest_dist) {
         closest_seed = seed_arr[k];
         closest_dist = temp_dist;
@@ -259,20 +282,20 @@ void init_region (region_t *region,
     double E_path_weight;
     double N_path_weight = INT32_MIN;
     double S_path_weight = INT32_MIN;
-    double dist_to_seed = distance(closest_seed->j, closest_seed->i, path_j, path_i);
-    double dist_to_exit = distance(MAX_COL - 1, region->E_exit_i, path_j, path_i);
-    E_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j + 1, path_i) - dist_to_seed) // prefer terrain boarders
+    double dist_to_seed = dist(closest_seed->j, closest_seed->i, path_j, path_i);
+    double dist_to_exit = dist(MAX_COL - 1, region->E_exit_i, path_j, path_i);
+    E_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j + 1, path_i) - dist_to_seed) // prefer terrain boarders
                   + 0.5*(rand() % 10); // ensure random progress is made towards exit
     if (path_i - 1 != 0 && 
         region->tile_arr[path_i - 1][path_j].ter != ter_path) {
-      N_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j,  path_i - 1) - dist_to_seed) // prefer terrain boarders
-                    + 0.05*path_j*(dist_to_exit - distance(MAX_COL - 1, region->E_exit_i, path_j, path_i - 1)) // head towards the exit especially near the end
+      N_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j,  path_i - 1) - dist_to_seed) // prefer terrain boarders
+                    + 0.05*path_j*(dist_to_exit - dist(MAX_COL - 1, region->E_exit_i, path_j, path_i - 1)) // head towards the exit especially near the end
                     + 0.05*path_i; // dont hug walls
     }
     if (path_i + 1 != MAX_ROW - 1 &&
         region->tile_arr[path_i + 1][path_j].ter != ter_path) {
-      S_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed) // prefer terrain boarders
-                    + 0.05*path_j*(dist_to_exit - distance(MAX_COL - 1, region->E_exit_i, path_j, path_i + 1)) //  head towards the exit especially near the end
+      S_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed) // prefer terrain boarders
+                    + 0.05*path_j*(dist_to_exit - dist(MAX_COL - 1, region->E_exit_i, path_j, path_i + 1)) //  head towards the exit especially near the end
                     + 0.05*(MAX_ROW - path_i); // dont hug walls
     }
 
@@ -306,9 +329,9 @@ void init_region (region_t *region,
   while (path_i != MAX_ROW - 2) {
     // find the closest seed
     seed_t *closest_seed = seed_arr[0];
-    double closest_dist = distance(seed_arr[0]->j, seed_arr[0]->i, path_j, path_i);
+    double closest_dist = dist(seed_arr[0]->j, seed_arr[0]->i, path_j, path_i);
     for (int32_t k = 1; k < num_seeds; k++) {
-      double temp_dist = distance(seed_arr[k]->j, seed_arr[k]->i, path_j, path_i);
+      double temp_dist = dist(seed_arr[k]->j, seed_arr[k]->i, path_j, path_i);
       if (temp_dist < closest_dist) {
         closest_seed = seed_arr[k];
         closest_dist = temp_dist;
@@ -322,20 +345,20 @@ void init_region (region_t *region,
     double S_path_weight = INT32_MIN;
     double E_path_weight = INT32_MIN;
     double W_path_weight = INT32_MIN;
-    double dist_to_seed = distance(closest_seed->j, closest_seed->i, path_j, path_i);
-    double dist_to_exit = distance(region->S_exit_j, MAX_ROW - 1, path_j, path_i);
-    S_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed)
+    double dist_to_seed = dist(closest_seed->j, closest_seed->i, path_j, path_i);
+    double dist_to_exit = dist(region->S_exit_j, MAX_ROW - 1, path_j, path_i);
+    S_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j, path_i + 1) - dist_to_seed)
                   + 0.5*(rand() % 10);
     if (path_j + 1 != MAX_COL - 1 && 
         region->tile_arr[path_i][path_j + 1].ter != ter_path) {
-      E_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
-                    + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j + 1, path_i))
+      E_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j + 1,  path_i) - dist_to_seed)
+                    + 0.1*path_i*(dist_to_exit - dist(region->S_exit_j, MAX_ROW - 1, path_j + 1, path_i))
                     + 0.05*(MAX_COL - path_j); // dont hug walls;;
     }
     if (path_j - 1 != 0 &&
         region->tile_arr[path_i][path_j - 1].ter != ter_path) {
-      W_path_weight = 0.2*(distance(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
-                    + 0.1*path_i*(dist_to_exit - distance(region->S_exit_j, MAX_ROW - 1, path_j - 1, path_i))
+      W_path_weight = 0.2*(dist(closest_seed->j, closest_seed->i, path_j - 1, path_i) - dist_to_seed)
+                    + 0.1*path_i*(dist_to_exit - dist(region->S_exit_j, MAX_ROW - 1, path_j - 1, path_i))
                     + 0.05*path_j; // dont hug walls;
     }
 
@@ -388,8 +411,7 @@ void init_region (region_t *region,
 
   // randomly select tiles and place a poke center if location is valid
   // poke centers must be placed next to a path'
-  int32_t center_placed = 0;
-  while (center_placed == 0) {
+  while (place_center != 0) {
     pos_t c_seed;
     c_seed.i = (rand() % (MAX_ROW - 4)) + 1;
     c_seed.j = (rand() % (MAX_COL - 4)) + 1;
@@ -399,8 +421,7 @@ void init_region (region_t *region,
       && region->tile_arr[c_seed.i][c_seed.j + 1].ter != ter_path
       && region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter != ter_path
       && 
-      (
-           region->tile_arr[c_seed.i - 1][c_seed.j].ter == ter_path
+      (    region->tile_arr[c_seed.i - 1][c_seed.j].ter == ter_path
         || region->tile_arr[c_seed.i - 1][c_seed.j + 1].ter == ter_path
         || region->tile_arr[c_seed.i][c_seed.j - 1].ter == ter_path
         || region->tile_arr[c_seed.i + 1][c_seed.j - 1].ter == ter_path
@@ -417,12 +438,11 @@ void init_region (region_t *region,
       region->tile_arr[c_seed.i][c_seed.j + 1].ch = CHAR_CENTER;
       region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter = ter_center;
       region->tile_arr[c_seed.i + 1][c_seed.j + 1].ch = CHAR_CENTER;
-      center_placed = 1;
+      place_center = 0;
     }
   }
 
-  int32_t mart_placed = 0;
-  while (mart_placed == 0) {
+  while (place_mart != 0) {
     pos_t c_seed;
     c_seed.i = (rand() % (MAX_ROW - 4)) + 1;
     c_seed.j = (rand() % (MAX_COL - 4)) + 1;
@@ -453,7 +473,7 @@ void init_region (region_t *region,
       region->tile_arr[c_seed.i][c_seed.j + 1].ch = CHAR_MART;
       region->tile_arr[c_seed.i + 1][c_seed.j + 1].ter = ter_mart;
       region->tile_arr[c_seed.i + 1][c_seed.j + 1].ch = CHAR_MART;
-      mart_placed = 1;
+      place_mart = 0;
     }
   }
 
@@ -532,6 +552,13 @@ void load_region(region_t *region_ptr[][WORLD_SIZE],
     S_exit = -1;
     W_exit = -1;
 
+    // determine if new region should generate with poke center and/or mart
+    // (-45d/200 + 50) / 100 => -0.45*d/200 + 0.50
+    int32_t d = m_dist(region_x, region_y, WORLD_SIZE/2, WORLD_SIZE/2);
+    double p = (-0.45*d)/200 + 0.50;
+    int32_t place_center = rand_outcome(p);
+    int32_t place_mart = rand_outcome(p);
+
     if (region_y + 1 < WORLD_SIZE) {
       if (region_ptr[region_x][region_y + 1] != NULL) {
         N_exit = region_ptr[region_x][region_y + 1]->S_exit_j; /* North Region, South Exit */
@@ -552,7 +579,7 @@ void load_region(region_t *region_ptr[][WORLD_SIZE],
         W_exit = region_ptr[region_x - 1][region_y]->E_exit_i; /* West Region, East Exit */
       }
     }
-    init_region(region_ptr[region_x][region_y], N_exit, E_exit, S_exit, W_exit);
+    init_region(region_ptr[region_x][region_y], N_exit, E_exit, S_exit, W_exit, place_center, place_mart);
   
     // If on the edge of the world, block exits with boulders so that player cannot
     // fall out of the world
@@ -577,10 +604,6 @@ void load_region(region_t *region_ptr[][WORLD_SIZE],
       region_ptr[region_x][region_y]->tile_arr[W_exit][0].ch = CHAR_BOULDER;
     }
   }
-
-  
-
-
   printf("Current region (%d,%d)", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
   printf(" aka (%d,%d)\n", region_x, region_y);
   print_region(region_ptr[region_x][region_y]);
@@ -611,7 +634,7 @@ int main (int argc, char *argv[])
   // Allocate memory for and generate the starting region
   region_t *new_region = malloc(sizeof(*new_region));
   region_ptr[region_x][region_y] = new_region;
-  init_region(region_ptr[region_x][region_y], -1, -1, -1, -1);
+  init_region(region_ptr[region_x][region_y], -1, -1, -1, -1, 1, 1);
   printf("Current region (%d,%d)\n", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
   print_region(region_ptr[region_x][region_y]);
 
