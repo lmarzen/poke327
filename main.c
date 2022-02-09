@@ -464,33 +464,33 @@ void init_region (region_t *region,
  * Process user input
  * Update which region is being displayed, generate new regions as needed.
  */
-void process_input (uint32_t *region_x, uint32_t *region_y, uint32_t *running) {
+void process_input (int32_t *region_x, int32_t *region_y, uint32_t *running) {
   char user_in = 0;
   scanf("%c", &user_in);
   switch (user_in) {
     case 'n':
-      if ((*region_y) < WORLD_SIZE) {
+      if ((*region_y) < WORLD_SIZE - 1) {
         ++(*region_y);
       } else {
         printf("Illegal input, out of bounds.\n");
       }
       break;
     case 'e':
-      if ((*region_x) < WORLD_SIZE) {
+      if ((*region_x) < WORLD_SIZE - 1) {
         ++(*region_x);
       } else {
         printf("Illegal input, out of bounds.\n");
       }
       break;
     case 's':
-      if ((*region_y) > 1) {
+      if ((*region_y) > 0) {
         --(*region_y);
       } else {
         printf("Illegal input, out of bounds.\n");
       }
       break;
     case 'w':
-      if ((*region_x) > 1) {
+      if ((*region_x) > 0) {
         --(*region_x);
       } else {
         printf("Illegal input, out of bounds.\n");
@@ -520,42 +520,70 @@ void process_input (uint32_t *region_x, uint32_t *region_y, uint32_t *running) {
   return;
 }
 
-void load_region(region_t *region_ptr, 
-                 uint32_t region_x, uint32_t region_y) {
+void load_region(region_t *region_ptr[][WORLD_SIZE], 
+                 int32_t region_x, int32_t region_y) {
   // If the region we are in is uninitialized, then generate the region.
-  // if ((&region_ptr)[region_x][region_y] == NULL) {
-  //   (&region_ptr)[region_x][region_y] = malloc(sizeof( ((&region_ptr)[region_x][region_y]) ));
-  //   int32_t N_exit, E_exit, S_exit, W_exit;
-  //   N_exit = -1;
-  //   E_exit = -1;
-  //   S_exit = -1;
-  //   W_exit = -1;
+  if (region_ptr[region_x][region_y] == NULL) {
+    region_t *new_region = malloc(sizeof(*new_region));
+    region_ptr[region_x][region_y] = new_region;
+    int32_t N_exit, E_exit, S_exit, W_exit;
+    N_exit = -1;
+    E_exit = -1;
+    S_exit = -1;
+    W_exit = -1;
 
-  //   // if ((&region_ptr)[region_x][region_y + 1] != NULL) {
-  //   //   N_exit = (&region_ptr)[region_x][region_y + 1]->S_exit_j; /* North Region, South Exit */
-  //   // } else {
-  //   //   N_exit = -1;
-  //   // }
-  //   // if ((&region_ptr)[region_x + 1][region_y] != NULL) {
-  //   //   E_exit = (&region_ptr)[region_x + 1][region_y]->W_exit_i; /* East Region, West Exit */
-  //   // } else {
-  //   //   E_exit = -1;
-  //   // }
-  //   // if ((&region_ptr)[region_x][region_y - 1] != NULL) {
-  //   //   S_exit = (&region_ptr)[region_x][region_y - 1]->N_exit_j; /* South Region, North Exit */
-  //   // } else {
-  //   //   S_exit = -1;
-  //   // }
-  //   // if ((&region_ptr)[region_x - 1][region_y] != NULL) {
-  //   //   W_exit = (&region_ptr)[region_x - 1][region_y]->E_exit_i; /* West Region, East Exit */
-  //   // } else {
-  //   //   W_exit = -1;
-  //   // }
-  //   init_region((&region_ptr)[region_x][region_y], N_exit, E_exit, S_exit, W_exit);
-  // }
-  printf("Current region (%d,%d)\n", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
-  printf("Current region (%d,%d)\n", region_x, region_y);
-  //print_region(*(&region_ptr)[region_x][region_y]);
+    if (region_y + 1 < WORLD_SIZE) {
+      if (region_ptr[region_x][region_y + 1] != NULL) {
+        N_exit = region_ptr[region_x][region_y + 1]->S_exit_j; /* North Region, South Exit */
+      }
+    }
+    if (region_x + 1 < WORLD_SIZE) {
+      if (region_ptr[region_x + 1][region_y] != NULL) {
+        E_exit = region_ptr[region_x + 1][region_y]->W_exit_i; /* East Region, West Exit */
+      }
+    }
+    if (region_y - 1 >= 0) {
+      if (region_ptr[region_x][region_y - 1] != NULL) {
+        S_exit = region_ptr[region_x][region_y - 1]->N_exit_j; /* South Region, North Exit */
+      }
+    }
+    if (region_x - 1 >= 0) {
+      if (region_ptr[region_x - 1][region_y] != NULL) {
+        W_exit = region_ptr[region_x - 1][region_y]->E_exit_i; /* West Region, East Exit */
+      }
+    }
+    init_region(region_ptr[region_x][region_y], N_exit, E_exit, S_exit, W_exit);
+  
+    // If on the edge of the world, block exits with boulders so that player cannot
+    // fall out of the world
+    if (region_y == WORLD_SIZE - 1) {
+      N_exit = region_ptr[region_x][region_y]->N_exit_j;
+      region_ptr[region_x][region_y]->tile_arr[0][N_exit].ter = ter_boulder;
+      region_ptr[region_x][region_y]->tile_arr[0][N_exit].ch = CHAR_BOULDER;
+    }
+    if (region_x == WORLD_SIZE - 1) {
+      E_exit = region_ptr[region_x][region_y]->E_exit_i;
+      region_ptr[region_x][region_y]->tile_arr[E_exit][MAX_COL-1].ter = ter_boulder;
+      region_ptr[region_x][region_y]->tile_arr[E_exit][MAX_COL-1].ch = CHAR_BOULDER;
+    }
+    if (region_y == 0) {
+      S_exit = region_ptr[region_x][region_y]->S_exit_j;
+      region_ptr[region_x][region_y]->tile_arr[MAX_ROW-1][S_exit].ter = ter_boulder;
+      region_ptr[region_x][region_y]->tile_arr[MAX_ROW-1][S_exit].ch = CHAR_BOULDER;
+    }
+    if (region_x == 0) {
+      W_exit = region_ptr[region_x][region_y]->W_exit_i;
+      region_ptr[region_x][region_y]->tile_arr[W_exit][0].ter = ter_boulder;
+      region_ptr[region_x][region_y]->tile_arr[W_exit][0].ch = CHAR_BOULDER;
+    }
+  }
+
+  
+
+
+  printf("Current region (%d,%d)", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
+  printf(" aka (%d,%d)\n", region_x, region_y);
+  print_region(region_ptr[region_x][region_y]);
 }
 
 int main (int argc, char *argv[])
@@ -572,33 +600,31 @@ int main (int argc, char *argv[])
   printf("Using seed: %u\n", seed);
   srand(seed);
 
+  // 2D array of points that will point to regions when a new region is generated
   region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
-  //region_t region_sss[WORLD_SIZE][WORLD_SIZE] = {NULL};
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
-  uint32_t region_x = WORLD_SIZE/2;
-  uint32_t region_y = WORLD_SIZE/2;
-  uint32_t prev_region_x = region_x;
-  uint32_t prev_region_y = region_y;
+  int32_t region_x = WORLD_SIZE/2;
+  int32_t region_y = WORLD_SIZE/2;
+  int32_t prev_region_x = region_x;
+  int32_t prev_region_y = region_y;
   // Allocate memory for and generate the starting region
-  region_ptr[region_x][region_y] = malloc(sizeof(region_t));
+  region_t *new_region = malloc(sizeof(*new_region));
+  region_ptr[region_x][region_y] = new_region;
   init_region(region_ptr[region_x][region_y], -1, -1, -1, -1);
   printf("Current region (%d,%d)\n", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
   print_region(region_ptr[region_x][region_y]);
 
+  // Run game
   uint32_t running = 1;
   while(running) { 
-
     if (region_x != prev_region_x || region_y != prev_region_y) {
-      load_region(&region_ptr, WORLD_SIZE/2, WORLD_SIZE/2);
+      load_region(region_ptr, region_x, region_y);
       prev_region_x = region_x;
       prev_region_y = region_y;
     }
-
     process_input(&region_x, &region_y, &running); 
   }
-
-  //free(&region_ptr[region_x][region_y]);
 
   return 0;
 }
