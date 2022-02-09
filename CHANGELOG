@@ -1,3 +1,9 @@
 01/31/2022 - Started project, created enums that represent tiles in a region, created function to print a region
 02/01/2022 - Implemented randomly generated terrain. (no paths, centers or marts yet)
 02/02/2022 - Implemented randomly generated paths. Added poke centers and poke marts.
+02/08/2022 - Added support to take a seed as an optional argument
+             Implemented dynamic memory allocation to regions when generated
+             Added controls to navigate between regions
+             Added logic to generate regions with "connecting" exits
+02/09/2022 - Added probabilistic generation of poke centers/marts.
+             Added function to free all allocated regions before exit
