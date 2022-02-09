@@ -609,6 +609,19 @@ void load_region(region_t *region_ptr[][WORLD_SIZE],
   print_region(region_ptr[region_x][region_y]);
 }
 
+/*
+ * Free all memomry allocated to regions
+ */
+void free_all_regions(region_t *region_ptr[][WORLD_SIZE]) {
+  for (int32_t i = 0; i < WORLD_SIZE; i++) {
+    for (int32_t j = 0; j < WORLD_SIZE; j++) {
+      if (region_ptr[i][j] != NULL) {
+        free(region_ptr[i][j]);
+      }
+    }
+  }
+}
+
 int main (int argc, char *argv[])
 {
   // Handle random seed
@@ -648,6 +661,8 @@ int main (int argc, char *argv[])
     }
     process_input(&region_x, &region_y, &running); 
   }
+
+  free_all_regions(region_ptr);
 
   return 0;
 }

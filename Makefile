@@ -1,5 +1,5 @@
 poke: main.c
-	gcc main.c -Wall -o poke -lm -O2
+	gcc main.c -Wall -o poke -lm
 
 clean:
-	rm -f *- poke core
+	rm -f *- poke core vgcore.*
