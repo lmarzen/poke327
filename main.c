@@ -13,7 +13,7 @@
 #define WORLD_SIZE 399
 
 #define MIN_SEEDS_PER_REGION 6 // at least 2 grass and 2 clearings seeds. (req)
-#define MAX_SEEDS_PER_REGION 10
+#define MAX_SEEDS_PER_REGION 12
 
 #define CHAR_BOULDER '%';
 #define CHAR_TREE '^';
@@ -460,8 +460,107 @@ void init_region (region_t *region,
   return;
 }
 
+/*
+ * Process user input
+ * Update which region is being displayed, generate new regions as needed.
+ */
+void process_input (uint32_t *region_x, uint32_t *region_y, uint32_t *running) {
+  char user_in = 0;
+  scanf("%c", &user_in);
+  switch (user_in) {
+    case 'n':
+      if ((*region_y) < WORLD_SIZE) {
+        ++(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'e':
+      if ((*region_x) < WORLD_SIZE) {
+        ++(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 's':
+      if ((*region_y) > 1) {
+        --(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'w':
+      if ((*region_x) > 1) {
+        --(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'f':
+      int32_t tmp_x = INT32_MIN;
+      int32_t tmp_y = INT32_MIN;
+      scanf(" %d %d", &tmp_x, &tmp_y);
+      if (abs(tmp_x) <= WORLD_SIZE/2 && abs(tmp_y) <= WORLD_SIZE/2) {
+        *region_x = tmp_x + WORLD_SIZE/2;
+        *region_y = tmp_y + WORLD_SIZE/2;
+      } else {
+        printf("Illegal input, coordinates entered may be out of bounds.\n");
+      }
+      break;
+    case 'q':
+      *running = 0;
+    case ' ':
+    case 10:
+      // do nothing, ignore spaces and linefeed characters
+      break;
+    default:
+      printf("Invalid input.\n");
+      break;
+  }
+  return;
+}
+
+void load_region(region_t *region_ptr, 
+                 uint32_t region_x, uint32_t region_y) {
+  // If the region we are in is uninitialized, then generate the region.
+  // if ((&region_ptr)[region_x][region_y] == NULL) {
+  //   (&region_ptr)[region_x][region_y] = malloc(sizeof( ((&region_ptr)[region_x][region_y]) ));
+  //   int32_t N_exit, E_exit, S_exit, W_exit;
+  //   N_exit = -1;
+  //   E_exit = -1;
+  //   S_exit = -1;
+  //   W_exit = -1;
+
+  //   // if ((&region_ptr)[region_x][region_y + 1] != NULL) {
+  //   //   N_exit = (&region_ptr)[region_x][region_y + 1]->S_exit_j; /* North Region, South Exit */
+  //   // } else {
+  //   //   N_exit = -1;
+  //   // }
+  //   // if ((&region_ptr)[region_x + 1][region_y] != NULL) {
+  //   //   E_exit = (&region_ptr)[region_x + 1][region_y]->W_exit_i; /* East Region, West Exit */
+  //   // } else {
+  //   //   E_exit = -1;
+  //   // }
+  //   // if ((&region_ptr)[region_x][region_y - 1] != NULL) {
+  //   //   S_exit = (&region_ptr)[region_x][region_y - 1]->N_exit_j; /* South Region, North Exit */
+  //   // } else {
+  //   //   S_exit = -1;
+  //   // }
+  //   // if ((&region_ptr)[region_x - 1][region_y] != NULL) {
+  //   //   W_exit = (&region_ptr)[region_x - 1][region_y]->E_exit_i; /* West Region, East Exit */
+  //   // } else {
+  //   //   W_exit = -1;
+  //   // }
+  //   init_region((&region_ptr)[region_x][region_y], N_exit, E_exit, S_exit, W_exit);
+  // }
+  printf("Current region (%d,%d)\n", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
+  printf("Current region (%d,%d)\n", region_x, region_y);
+  //print_region(*(&region_ptr)[region_x][region_y]);
+}
+
 int main (int argc, char *argv[])
 {
+  // Handle random seed
   struct timeval t;
   uint32_t seed;
   if (argc == 2) {
@@ -473,55 +572,33 @@ int main (int argc, char *argv[])
   printf("Using seed: %u\n", seed);
   srand(seed);
 
+  region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
+  //region_t region_sss[WORLD_SIZE][WORLD_SIZE] = {NULL};
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
   uint32_t region_x = WORLD_SIZE/2;
   uint32_t region_y = WORLD_SIZE/2;
-  // Allocate memory for initial region
-  region_t *region = malloc(sizeof(region_t));
-  init_region(region, -1, -1, -1, -1);
-  print_region(region);
+  uint32_t prev_region_x = region_x;
+  uint32_t prev_region_y = region_y;
+  // Allocate memory for and generate the starting region
+  region_ptr[region_x][region_y] = malloc(sizeof(region_t));
+  init_region(region_ptr[region_x][region_y], -1, -1, -1, -1);
+  printf("Current region (%d,%d)\n", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
+  print_region(region_ptr[region_x][region_y]);
 
-  char user_in = 0;
-  int32_t tmp_x = INT32_MIN;
-  int32_t tmp_y = INT32_MIN;
-  while(user_in != 'q') { 
-    scanf("%c", &user_in);  
-    switch (user_in) {
-      case 'n':
-        break;
-      case 'e':
-        break;
-      case 's':
-        break;
-      case 'w':
-        break;
-      case 'f':
-        scanf(" %d %d", &tmp_x, &tmp_y);
-        if (abs(tmp_x) <= WORLD_SIZE/2 && abs(tmp_y) <= WORLD_SIZE/2) {
-          region_x = tmp_x + WORLD_SIZE/2;
-          region_y = tmp_y + WORLD_SIZE/2;
-        } else {
-          printf("Invalid input, coordinates entered are out of bounds.\n");
-        }
+  uint32_t running = 1;
+  while(running) { 
 
-        printf("%d %d\n", tmp_x, tmp_y);
-        
-        break;
-      case 'q':
-        // do nothing, while loop will break on after completion of this iteration
-        break;
-      case ' ':
-      case 10:
-        // do nothing, ignore spaces and linefeed characters
-        break;
-      default:
-        printf("Invalid input.\n");
-        break;
+    if (region_x != prev_region_x || region_y != prev_region_y) {
+      load_region(&region_ptr, WORLD_SIZE/2, WORLD_SIZE/2);
+      prev_region_x = region_x;
+      prev_region_y = region_y;
     }
+
+    process_input(&region_x, &region_y, &running); 
   }
 
-  free(region);
+  //free(&region_ptr[region_x][region_y]);
 
   return 0;
 }
