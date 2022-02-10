@@ -9,7 +9,7 @@
 #define MAX_ROW 21
 #define MAX_COL 80
 
-// world dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
+// World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
 
 #define MIN_SEEDS_PER_REGION 6 // at least 2 grass and 2 clearings seeds. (req)
@@ -97,6 +97,11 @@ void print_region (region_t *region) {
     printf("\n");
   }
 }
+
+
+// Global variables
+// 2D array of pointers, each pointer points to one of the regions the world
+region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
 
 /*
  * Initialize a region
@@ -540,8 +545,7 @@ void process_input (int32_t *region_x, int32_t *region_y, uint32_t *running) {
   return;
 }
 
-void load_region(region_t *region_ptr[][WORLD_SIZE], 
-                 int32_t region_x, int32_t region_y) {
+void load_region(int32_t region_x, int32_t region_y) {
   // If the region we are in is uninitialized, then generate the region.
   if (region_ptr[region_x][region_y] == NULL) {
     region_t *new_region = malloc(sizeof(*new_region));
@@ -612,7 +616,7 @@ void load_region(region_t *region_ptr[][WORLD_SIZE],
 /*
  * Free all memomry allocated to regions
  */
-void free_all_regions(region_t *region_ptr[][WORLD_SIZE]) {
+void free_all_regions() {
   for (int32_t i = 0; i < WORLD_SIZE; i++) {
     for (int32_t j = 0; j < WORLD_SIZE; j++) {
       if (region_ptr[i][j] != NULL) {
@@ -636,8 +640,6 @@ int main (int argc, char *argv[])
   printf("Using seed: %u\n", seed);
   srand(seed);
 
-  // 2D array of points that will point to regions when a new region is generated
-  region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
   int32_t region_x = WORLD_SIZE/2;
@@ -655,14 +657,14 @@ int main (int argc, char *argv[])
   uint32_t running = 1;
   while(running) { 
     if (region_x != prev_region_x || region_y != prev_region_y) {
-      load_region(region_ptr, region_x, region_y);
+      load_region(region_x, region_y);
       prev_region_x = region_x;
       prev_region_y = region_y;
     }
     process_input(&region_x, &region_y, &running); 
   }
 
-  free_all_regions(region_ptr);
+  free_all_regions();
 
   return 0;
 }
