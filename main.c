@@ -490,7 +490,9 @@ void init_region (region_t *region,
  * Update which region is being displayed, generate new regions as needed.
  */
 void process_input (int32_t *region_x, int32_t *region_y, uint32_t *running) {
-  char user_in = 0;
+  char user_in = 0; 
+  int32_t tmp_x = INT32_MIN;
+  int32_t tmp_y = INT32_MIN;
   scanf("%c", &user_in);
   switch (user_in) {
     case 'n':
@@ -522,8 +524,6 @@ void process_input (int32_t *region_x, int32_t *region_y, uint32_t *running) {
       }
       break;
     case 'f':
-      int32_t tmp_x = INT32_MIN;
-      int32_t tmp_y = INT32_MIN;
       scanf(" %d %d", &tmp_x, &tmp_y);
       if (abs(tmp_x) <= WORLD_SIZE/2 && abs(tmp_y) <= WORLD_SIZE/2) {
         *region_x = tmp_x + WORLD_SIZE/2;
