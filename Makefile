@@ -1,5 +1,20 @@
-poke: main.c
-	gcc main.c -Wall -o poke -lm
+TARGET = poke
+LIBS = -lm
+CC = gcc
+CFLAGS = -Wall -ggdb -funroll-loops
+
+HEADERS = heap.h
+OBJECTS = main.o heap.o
+
+.PHONY: default all clean
+
+all: $(TARGET)
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) $(LIBS) -o $@
 
 clean:
-	rm -f *- poke core vgcore.*
+	rm -f $(TARGET) *.o core vgcore.*
