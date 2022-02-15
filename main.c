@@ -53,33 +53,18 @@ enum trainer {
 
 static int32_t travel_times[11][4] = {
                   /*    Hiker,   Rival,      PC,  Others */
-  /* ter_border   */ {10000, 10000, 10000, 10000},
-  /* ter_boulder  */ {10000, 10000, 10000, 10000},
-  /* ter_tree     */ {10000, 10000, 10000, 10000},
-  /* ter_center   */ {10000, 10000,      10, 10000},
-  /* ter_mart     */ {10000, 10000,      10, 10000},
+  /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_boulder  */ {     10, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_tree     */ {     10, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_center   */ {INT_MAX, INT_MAX,      10, INT_MAX},
+  /* ter_mart     */ {INT_MAX, INT_MAX,      10, INT_MAX},
   /* ter_path     */ {     10,      10,      10,      10},
   /* ter_grass    */ {     15,      20,      20,      20},
   /* ter_clearing */ {     10,      10,      10,      10},
-  /* ter_mountain */ {     15, 10000, 10000, 10000},
-  /* ter_forest   */ {     15, 10000, 10000, 10000},
-  /* ter_mixed    */ {10000, 10000, 10000, 10000}
+  /* ter_mountain */ {     15, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_forest   */ {     15, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX}
 };
-
-// static int32_t travel_times[11][4] = {
-//                   /*    Hiker,   Rival,      PC,  Others */
-//   /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-//   /* ter_boulder  */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-//   /* ter_tree     */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-//   /* ter_center   */ {INT_MAX, INT_MAX,      10, INT_MAX},
-//   /* ter_mart     */ {INT_MAX, INT_MAX,      10, INT_MAX},
-//   /* ter_path     */ {     10,      10,      10,      10},
-//   /* ter_grass    */ {     15,      20,      20,      20},
-//   /* ter_clearing */ {     10,      10,      10,      10},
-//   /* ter_mountain */ {     15, INT_MAX, INT_MAX, INT_MAX},
-//   /* ter_forest   */ {     15, INT_MAX, INT_MAX, INT_MAX},
-//   /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX}
-// };
 
 typedef struct tile {
   enum terrain ter;
@@ -581,6 +566,163 @@ void process_input (int32_t *region_x, int32_t *region_y, uint32_t *running) {
   return;
 }
 
+static int32_t path_cmp(const void *key, const void *with) {
+  return ((path_t *) key)->cost - ((path_t *) with)->cost;
+}
+
+/*
+ * Uses dijkstra's algorithm to find an optimal path to a specified location
+ *
+ * Returns distance in number of steps between the points.
+ * INT_MAX for no valid route.
+ */
+static int32_t dijkstra(region_t *region, enum trainer tnr,
+                   int32_t from_i, int32_t from_j, 
+                   int32_t to_i,   int32_t to_j)
+{
+  static path_t path[MAX_ROW][MAX_COL], *p;
+  heap_t h;
+  uint32_t i, j;
+  enum terrain ter;
+  int32_t neighbor_cost;
+  const int32_t straight_stepcost = 10; // distance between tile centers is 1.0 units
+  const int32_t diagonal_stepcost = 14; // distance across diagonals is ~1.4 units
+
+  // Before anything, check if we are starting somewhere with cost infinity
+  if (travel_times[region->tile_arr[from_i][from_j].ter][tnr]  == INT_MAX) {
+    return INT_MAX;
+  }
+
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      path[i][j].pos_i = i;
+      path[i][j].pos_j = j;
+      path[i][j].cost = INT_MAX;
+    }
+  }
+  path[from_i][from_j].cost = 0;
+
+  heap_init(&h, path_cmp, NULL);
+
+  for (i = 1; i < MAX_ROW - 1; i++) {
+    for (j = 1; j < MAX_COL - 1; j++) {
+      path[i][j].hn = heap_insert(&h, &path[i][j]);
+    }
+  }
+
+  while ((p = heap_remove_min(&h))) {
+    p->hn = NULL;
+
+    if ((p->pos_i == to_i) && p->pos_j == to_j) {
+      int32_t dist = 0;
+      for (i = to_i, j = to_j;
+           (i != from_i) || (j != from_j);
+           p = &path[i][j], i = p->from_i, j = p->from_j) {
+        if (path[i][j].cost == INT_MAX) {
+          // No valid solutions exist
+          heap_delete(&h);
+          return INT_MAX;
+        }
+        ++dist;
+      }
+      heap_delete(&h);
+      return dist;
+    }
+
+    // North
+    ter = region->tile_arr[p->pos_i - 1][p->pos_j    ].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + straight_stepcost;
+    if ((path[p->pos_i - 1][p->pos_j    ].hn) && 
+        (path[p->pos_i - 1][p->pos_j    ].cost > neighbor_cost)) {
+      path[p->pos_i - 1][p->pos_j    ].cost = neighbor_cost;
+      path[p->pos_i - 1][p->pos_j    ].from_i = p->pos_i;
+      path[p->pos_i - 1][p->pos_j    ].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i - 1][p->pos_j    ].hn);
+    }
+    // South
+    ter = region->tile_arr[p->pos_i + 1][p->pos_j    ].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + straight_stepcost;
+    if ((path[p->pos_i + 1][p->pos_j    ].hn) &&
+        (path[p->pos_i + 1][p->pos_j    ].cost > neighbor_cost)) {
+      path[p->pos_i + 1][p->pos_j    ].cost = neighbor_cost;
+      path[p->pos_i + 1][p->pos_j    ].from_i = p->pos_i;
+      path[p->pos_i + 1][p->pos_j    ].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i + 1][p->pos_j    ].hn);
+    }
+    // East
+    ter = region->tile_arr[p->pos_i    ][p->pos_j + 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + straight_stepcost;
+    if ((path[p->pos_i    ][p->pos_j + 1].hn) &&
+        (path[p->pos_i    ][p->pos_j + 1].cost > neighbor_cost)) {
+      path[p->pos_i    ][p->pos_j + 1].cost = neighbor_cost;
+      path[p->pos_i    ][p->pos_j + 1].from_i = p->pos_i;
+      path[p->pos_i    ][p->pos_j + 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i    ][p->pos_j + 1].hn);
+    }
+    // West
+    ter = region->tile_arr[p->pos_i    ][p->pos_j - 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + straight_stepcost;
+    if ((path[p->pos_i    ][p->pos_j - 1].hn) &&
+        (path[p->pos_i    ][p->pos_j - 1].cost > neighbor_cost)) {
+      path[p->pos_i    ][p->pos_j - 1].cost = neighbor_cost;
+      path[p->pos_i    ][p->pos_j - 1].from_i = p->pos_i;
+      path[p->pos_i    ][p->pos_j - 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i    ][p->pos_j - 1].hn);
+    }
+    // North East
+    ter = region->tile_arr[p->pos_i - 1][p->pos_j + 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : (p->cost + travel_times[ter][tnr]) + diagonal_stepcost;
+    if ((path[p->pos_i - 1][p->pos_j + 1].hn) && 
+        (path[p->pos_i - 1][p->pos_j + 1].cost > neighbor_cost)) {
+      path[p->pos_i - 1][p->pos_j + 1].cost = neighbor_cost;
+      path[p->pos_i - 1][p->pos_j + 1].from_i = p->pos_i;
+      path[p->pos_i - 1][p->pos_j + 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i - 1][p->pos_j + 1].hn);
+    }
+    // North West
+    ter = region->tile_arr[p->pos_i - 1][p->pos_j - 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + diagonal_stepcost;
+    if ((path[p->pos_i - 1][p->pos_j - 1].hn) && 
+        (path[p->pos_i - 1][p->pos_j - 1].cost > neighbor_cost)) {
+      path[p->pos_i - 1][p->pos_j - 1].cost = neighbor_cost;
+      path[p->pos_i - 1][p->pos_j - 1].from_i = p->pos_i;
+      path[p->pos_i - 1][p->pos_j - 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i - 1][p->pos_j - 1].hn);
+    }
+    // South East
+    ter = region->tile_arr[p->pos_i + 1][p->pos_j + 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + diagonal_stepcost;
+    if ((path[p->pos_i + 1][p->pos_j + 1].hn) && 
+        (path[p->pos_i + 1][p->pos_j + 1].cost > neighbor_cost)) {
+      path[p->pos_i + 1][p->pos_j + 1].cost = neighbor_cost;
+      path[p->pos_i + 1][p->pos_j + 1].from_i = p->pos_i;
+      path[p->pos_i + 1][p->pos_j + 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i + 1][p->pos_j + 1].hn);
+    }
+    // South West
+    ter = region->tile_arr[p->pos_i + 1][p->pos_j - 1].ter;
+    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
+                     INT_MAX : p->cost + travel_times[ter][tnr] + diagonal_stepcost;
+    if ((path[p->pos_i + 1][p->pos_j - 1].hn) && 
+        (path[p->pos_i + 1][p->pos_j - 1].cost > neighbor_cost)) {
+      path[p->pos_i + 1][p->pos_j - 1].cost = neighbor_cost;
+      path[p->pos_i + 1][p->pos_j - 1].from_i = p->pos_i;
+      path[p->pos_i + 1][p->pos_j - 1].from_j = p->pos_j;
+      heap_decrease_key_no_replace(&h, path[p->pos_i + 1][p->pos_j - 1].hn);
+    }
+
+  }
+  heap_delete(&h);
+  return INT_MAX;
+}
+
 void init_pc () {
   int32_t found_location = 0;
   while (found_location != 1) {
@@ -590,6 +732,29 @@ void init_pc () {
       found_location = 1;
     }
   }
+}
+
+void print_distance_map(int32_t region_x, int32_t region_y, enum trainer tnr) {
+  for (int32_t i = 0; i < MAX_ROW; i++) {
+    printf("   ");
+  }
+  printf("\n");
+  for (int32_t i = 1; i < MAX_ROW - 1; i++) {
+    printf("   ");
+    for (int32_t j = 1; j < MAX_COL - 1; j++) {
+      int32_t dist = dijkstra(region_ptr[region_x][region_y], tnr, i, j, pc.pos_i, pc.pos_j);
+      if (dist != INT_MAX) {
+        printf("%02d ", dist % 100);
+      } else {
+        printf("   ");
+      }
+    }
+    printf("   \n");
+  }
+  for (int32_t i = 0; i < MAX_ROW; i++) {
+    printf("   ");
+  }
+  printf("\n");
 }
 
 void load_region(int32_t region_x, int32_t region_y) {
@@ -652,7 +817,11 @@ void load_region(int32_t region_x, int32_t region_y) {
     }
   }
   
-  init_pc();
+  init_pc(); // random player cords
+  printf("Hiker distance map:\n");
+  print_distance_map(pc.region_x, pc.region_y, tnr_hiker);
+  printf("Rival  distance map:\n");
+  print_distance_map(pc.region_x, pc.region_y, tnr_rival);
 
   printf("Current region (%d,%d)", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
   printf(", player at (%d,%d)\n", pc.pos_i, pc.pos_j);
@@ -670,164 +839,6 @@ void free_all_regions() {
       }
     }
   }
-}
-
-static int32_t path_cmp(const void *key, const void *with) {
-  return ((path_t *) key)->cost - ((path_t *) with)->cost;
-}
-
-static void a_star(region_t *region, enum trainer tnr,
-                   int32_t from_i, int32_t from_j, 
-                   int32_t to_i,   int32_t to_j)
-{
-  static path_t path[MAX_ROW][MAX_COL], *p;
-  heap_t h;
-  uint32_t i, j;
-  enum terrain ter;
-  int32_t neighbor_cost;
-
-  // Assign costs
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
-      path[i][j].pos_i = i;
-      path[i][j].pos_j = j;
-      path[i][j].cost = INT_MAX;
-    }
-  }
-  path[from_i][from_j].cost = 0;
-
-  heap_init(&h, path_cmp, NULL);
-
-  for (i = 1; i < MAX_ROW - 1; i++) {
-    for (j = 1; j < MAX_COL - 1; j++) {
-      path[i][j].hn = heap_insert(&h, &path[i][j]);
-    }
-  }
-
-  while ((p = heap_remove_min(&h))) {
-    p->hn = NULL;
-
-    if ((p->pos_i == to_i) && p->pos_j == to_j) {
-      for (i = to_i, j = to_j;
-           (i != from_i) || (j != from_j);
-           p = &path[i][j], i = p->from_i, j = p->from_j) {
-        region->tile_arr[i][j].ter = ter_center;
-      }
-      heap_delete(&h);
-      return;
-    }
-
-/*
-    if tentative_gScore < gScore[neighbor]
-    // This path to neighbor is better than any previous one. Record it!
-    cameFrom[neighbor] := current
-    gScore[neighbor] := tentative_gScore
-    fScore[neighbor] := tentative_gScore + h(neighbor)
-    if neighbor not in openSet
-        openSet.add(neighbor)
-*/
-
-    // North
-    ter = region->tile_arr[p->pos_i - 1][p->pos_j    ].ter;
-    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
-                     INT_MAX : p->cost + travel_times[ter][tnr];
-    if ((path[p->pos_i - 1][p->pos_j    ].hn) && 
-        (path[p->pos_i - 1][p->pos_j    ].cost > neighbor_cost)) {
-      // cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
-      //        INT_MAX : p->cost + travel_times[ter][tnr];
-      path[p->pos_i - 1][p->pos_j    ].cost = neighbor_cost;
-      path[p->pos_i - 1][p->pos_j    ].from_i = p->pos_i;
-      path[p->pos_i - 1][p->pos_j    ].from_j = p->pos_j;
-      heap_decrease_key_no_replace(&h, path[p->pos_i - 1][p->pos_j    ].hn);
-    }
-    // South
-    ter = region->tile_arr[p->pos_i + 1][p->pos_j    ].ter;
-    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
-                     INT_MAX : p->cost + travel_times[ter][tnr];
-    if ((path[p->pos_i + 1][p->pos_j    ].hn) &&
-        (path[p->pos_i + 1][p->pos_j    ].cost > neighbor_cost)) {
-      path[p->pos_i + 1][p->pos_j    ].cost = neighbor_cost;
-      path[p->pos_i + 1][p->pos_j    ].from_i = p->pos_i;
-      path[p->pos_i + 1][p->pos_j    ].from_j = p->pos_j;
-      heap_decrease_key_no_replace(&h, path[p->pos_i + 1][p->pos_j    ].hn);
-    }
-    // East
-    ter = region->tile_arr[p->pos_i    ][p->pos_j + 1].ter;
-    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
-                     INT_MAX : p->cost + travel_times[ter][tnr];
-    if ((path[p->pos_i    ][p->pos_j + 1].hn) &&
-        (path[p->pos_i    ][p->pos_j + 1].cost > neighbor_cost)) {
-      path[p->pos_i    ][p->pos_j + 1].cost = neighbor_cost;
-      path[p->pos_i    ][p->pos_j + 1].from_i = p->pos_i;
-      path[p->pos_i    ][p->pos_j + 1].from_j = p->pos_j;
-      heap_decrease_key_no_replace(&h, path[p->pos_i    ][p->pos_j + 1].hn);
-    }
-    // West
-    ter = region->tile_arr[p->pos_i    ][p->pos_j - 1].ter;
-    neighbor_cost = (p->cost == INT_MAX || travel_times[ter][tnr] == INT_MAX) ? 
-                     INT_MAX : p->cost + travel_times[ter][tnr];
-    if ((path[p->pos_i    ][p->pos_j - 1].hn) &&
-        (path[p->pos_i    ][p->pos_j - 1].cost > neighbor_cost)) {
-      path[p->pos_i    ][p->pos_j - 1].cost = neighbor_cost;
-      path[p->pos_i    ][p->pos_j - 1].from_i = p->pos_i;
-      path[p->pos_i    ][p->pos_j - 1].from_j = p->pos_j;
-      heap_decrease_key_no_replace(&h, path[p->pos_i    ][p->pos_j - 1].hn);
-    }
-    
-    // if ((path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
-    //     (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost >
-    //      ((p->cost + heightpair(p->pos)) *
-    //       edge_penalty(p->pos[dim_x], p->pos[dim_y] - 1)))) {
-    //   path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost =
-    //     ((p->cost + heightpair(p->pos)) *
-    //      edge_penalty(p->pos[dim_x], p->pos[dim_y] - 1));
-    //   path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
-    //   path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
-    //   heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
-    //                                        [p->pos[dim_x]    ].hn);
-    // }
-    // if ((path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
-    //     (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost >
-    //      ((p->cost + heightpair(p->pos)) *
-    //       edge_penalty(p->pos[dim_x] - 1, p->pos[dim_y])))) {
-    //   path[p->pos[dim_y]][p->pos[dim_x] - 1].cost =
-    //     ((p->cost + heightpair(p->pos)) *
-    //      edge_penalty(p->pos[dim_x] - 1, p->pos[dim_y]));
-    //   path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
-    //   path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
-    //   heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
-    //                                        [p->pos[dim_x] - 1].hn);
-    // }
-    // if ((path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
-    //     (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost >
-    //      ((p->cost + heightpair(p->pos)) *
-    //       edge_penalty(p->pos[dim_x] + 1, p->pos[dim_y])))) {
-    //   path[p->pos[dim_y]][p->pos[dim_x] + 1].cost =
-    //     ((p->cost + heightpair(p->pos)) *
-    //      edge_penalty(p->pos[dim_x] + 1, p->pos[dim_y]));
-    //   path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
-    //   path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
-    //   heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
-    //                                        [p->pos[dim_x] + 1].hn);
-    // }
-    // if ((path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
-    //     (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost >
-    //      ((p->cost + heightpair(p->pos)) *
-    //       edge_penalty(p->pos[dim_x], p->pos[dim_y] + 1)))) {
-    //   path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost =
-    //     ((p->cost + heightpair(p->pos)) *
-    //      edge_penalty(p->pos[dim_x], p->pos[dim_y] + 1));
-    //   path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
-    //   path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
-    //   heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
-    //                                        [p->pos[dim_x]    ].hn);
-    // }
-  }
-  printf("done with while");
-}
-
-void print_distance_map(int32_t region_x, int32_t region_y, enum trainer tnr) {
-  a_star(region_ptr[region_x][region_y], tnr, 1, 1, pc.pos_i, pc.pos_j);
 }
 
 int main (int argc, char *argv[])
@@ -853,8 +864,14 @@ int main (int argc, char *argv[])
   // Allocate memory for and generate the starting region
   region_t *new_region = malloc(sizeof(*new_region));
   region_ptr[pc.region_x][pc.region_y] = new_region;
+
   init_region(region_ptr[pc.region_x][pc.region_y], -1, -1, -1, -1, 1, 1);
+
   init_pc();
+  printf("Hiker distance map:\n");
+  print_distance_map(pc.region_x, pc.region_y, tnr_hiker);
+  printf("Rival  distance map:\n");
+  print_distance_map(pc.region_x, pc.region_y, tnr_rival);
   printf("Current region (%d,%d)", pc.region_x - WORLD_SIZE/2, pc.region_y - WORLD_SIZE/2);
   printf(", player at (%d,%d)\n", pc.pos_i, pc.pos_j);
   print_region(region_ptr[pc.region_x][pc.region_y]);
@@ -864,9 +881,6 @@ int main (int argc, char *argv[])
   while(running) { 
     if (pc.region_x != prev_region_x || pc.region_y != prev_region_y) {
       load_region(pc.region_x, pc.region_y);
-
-      print_distance_map(pc.region_x, pc.region_y, tnr_hiker);
-      print_region(region_ptr[pc.region_x][pc.region_y]);
       prev_region_x = pc.region_x;
       prev_region_y = pc.region_y;
     }
