@@ -1,9 +1,14 @@
-01/31/2022 - Started project, created enums that represent tiles in a region, created function to print a region
+01/31/2022 - Started project, created enums that represent tiles in a region, created function to print a region.
 02/01/2022 - Implemented randomly generated terrain. (no paths, centers or marts yet)
 02/02/2022 - Implemented randomly generated paths. Added poke centers and poke marts.
-02/08/2022 - Added support to take a seed as an optional argument
-             Implemented dynamic memory allocation to regions when generated
-             Added controls to navigate between regions
-             Added logic to generate regions with "connecting" exits
+02/08/2022 - Added support to take a seed as an optional argument.
+             Implemented dynamic memory allocation to regions when generated.
+             Added controls to navigate between regions.
+             Added logic to generate regions with "connecting" exits.
 02/09/2022 - Added probabilistic generation of poke centers/marts.
-             Added function to free all allocated regions before exit
+             Added function to free all allocated regions before exit.
+02/13/2022 - Added mountain and forest terain types
+             Added Dr. Sheaffer's fibonacci queue and update Makefile accordingly.
+             Began work on implementing Dijkstra's algorithm.
+02/14/2022 - Completed and debugged  Dijkstra's algorithm.
+             Added function to print distance maps for various trainer types.

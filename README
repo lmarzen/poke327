@@ -1,23 +1,35 @@
-Files:
+Files
+---
 main.c
+heap.h
+heap.c
 Makefile
 CHANGELOG
 README
 
-Regions are generated and allocated memory only once visited. Region exits align with neighboring regions. Poke centers and poke marts become less common as distance from the orgin increases. Controls can be used to navigate between regions.
+Description
+---
+Regions are procedurally generated. Controls can be used to navigate between regions.
+A player is initialized on a random path tile. Distance maps are then generated for
+Hiker and Rival trainer types, using Dijkstra's algorithm to find the optimal path to
+the player character.
 
 Key
 ---
-Boulder:     %
-Tree:        ^
-Poke Center: C
-Poke Mart:   M 
-Path:        #
-Grass:       :
-Clearing:    .
+@  Player Character
+%  Border
+%  Boulder
+^  Tree
+C  Poke Center
+M  Poke Mart
+#  Path
+:  Grass
+.  Clearing
+%  Mountain
+^  Forest
 
 Controls
 ---
 n,s,e,w - Move one region North, South, East, or West respectively
 f [x] [y] - Fly to a specified region
-q - quit
+q - Quit
