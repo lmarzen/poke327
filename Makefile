@@ -1,7 +1,7 @@
 TARGET = poke
 LIBS = -lm
 CC = gcc
-CFLAGS = -Wall -ggdb -funroll-loops
+CFLAGS = -Wall -ggdb -O3
 
 HEADERS = heap.h
 OBJECTS = main.o heap.o

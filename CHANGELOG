@@ -12,3 +12,4 @@
              Began work on implementing Dijkstra's algorithm.
 02/14/2022 - Completed and debugged  Dijkstra's algorithm.
              Added function to print distance maps for various trainer types.
+02/25/2022 - Optimized distance map calculations
