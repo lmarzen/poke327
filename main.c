@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 
 #include "heap.h"
@@ -14,23 +15,35 @@
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
 
-#define MIN_SEEDS_PER_REGION 6 // at least 2 grass and 2 clearings seeds. (req)
+// The number of biomes that will populate each region
+#define MIN_SEEDS_PER_REGION 6 // The first 2 will be grass the next 2 will be clearings after that it is randomized.
 #define MAX_SEEDS_PER_REGION 12
 
-#define CHAR_BORDER    '%';
-#define CHAR_BOULDER   '%';
-#define CHAR_TREE      '^';
-#define CHAR_CENTER    'C';
-#define CHAR_MART      'M';
-#define CHAR_PATH      '#';
-#define CHAR_GRASS     ':';
-#define CHAR_CLEARING  '.';
-#define CHAR_MOUNTAIN  '%';
-#define CHAR_FOREST    '^';
-#define CHAR_UNDEFINED 'U';
-#define CHAR_PC        '@';
+// The number of trainers that will populate each region
+#define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers
+#define MIN_TRAINERS 6
+#define MAX_TRAINERS 12
 
-enum terrain {
+#define CHAR_BORDER       '%';
+#define CHAR_BOULDER      '%';
+#define CHAR_TREE         '^';
+#define CHAR_CENTER       'C';
+#define CHAR_MART         'M';
+#define CHAR_PATH         '#';
+#define CHAR_GRASS        ':';
+#define CHAR_CLEARING     '.';
+#define CHAR_MOUNTAIN     '%';
+#define CHAR_FOREST       '^';
+#define CHAR_PC           '@';
+#define CHAR_HIKER        'h';
+#define CHAR_RIVAL        'r';
+#define CHAR_PACER        'p';
+#define CHAR_WANDERER     'w';
+#define CHAR_STATIONARY   's';
+#define CHAR_RAND_WALKER  'n';
+#define CHAR_UNDEFINED    'U';
+
+typedef enum terrain {
   ter_border,
   ter_boulder,
   ter_tree,
@@ -42,37 +55,47 @@ enum terrain {
   ter_mountain,
   ter_forest,
   ter_mixed
-};
+} terrain_t;
 
-enum trainer {
+typedef enum trainer {
+  tnr_pc,
   tnr_hiker,
   tnr_rival,
-  tnr_pc,
-  tnr_other
-};
+  tnr_pacer,
+  tnr_wanderer,
+  tnr_stationary,
+  tnr_rand_walker
+} trainer_t;
 
 typedef struct tile {
-  enum terrain ter;
+  terrain_t ter;
 } tile_t;
 
 typedef struct seed {
   int32_t i, j;
-  enum terrain ter;
+  terrain_t ter;
 } seed_t;
-
-typedef struct region {
-  tile_t tile_arr[MAX_ROW][MAX_COL];
-  int32_t N_exit_j, E_exit_i, S_exit_j, W_exit_i;
-} region_t;
 
 typedef struct pos {
   int32_t i, j;
 } pos_t;
 
-typedef struct player_character {
+typedef struct pc {
   int32_t region_x, region_y;
   int32_t pos_i, pos_j;
-} player_character_t;
+} pc_t;
+
+typedef struct npc {
+  trainer_t tnr; 
+  int32_t pos_i, pos_j;
+} npc_t;
+
+typedef struct region {
+  tile_t tile_arr[MAX_ROW][MAX_COL];
+  int32_t N_exit_j, E_exit_i, S_exit_j, W_exit_i;
+  int32_t num_npc;
+  npc_t *npc_arr; // pointer to an array that will be dynamically allocated
+} region_t;
 
 typedef struct path {
   heap_node_t *hn;
@@ -86,22 +109,28 @@ typedef struct path {
 region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
 int32_t dist_map_hiker[MAX_ROW][MAX_COL];
 int32_t dist_map_rival[MAX_ROW][MAX_COL];
-player_character_t pc;
-static const int32_t travel_times[11][4] = {
-                  /*    Hiker,   Rival,      PC,  Others */
-  /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_boulder  */ {     10, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_tree     */ {     10, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_center   */ {INT_MAX, INT_MAX,      10, INT_MAX},
-  /* ter_mart     */ {INT_MAX, INT_MAX,      10, INT_MAX},
-  /* ter_path     */ {     10,      10,      10,      10},
-  /* ter_grass    */ {     15,      20,      20,      20},
-  /* ter_clearing */ {     10,      10,      10,      10},
-  /* ter_mountain */ {     15, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_forest   */ {     15, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX}
+pc_t pc;
+int32_t seed;
+int32_t numtrainers = NUM_TRAINERS;
+static const int32_t travel_times[11][7] = {
+                  /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
+  /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_boulder  */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_tree     */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_center   */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_mart     */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_path     */ {     10,      10,      10,      10,      10,      10,      10},
+  /* ter_grass    */ {     20,      15,      20,      20,      20,      20,      20},
+  /* ter_clearing */ {     10,      10,      10,      10,      10,      10,      10},
+  /* ter_mountain */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_forest   */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+  /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX}
 };
 
+void usage(const char *argv0) {
+  fprintf(stderr, "Usage: %s [--numtrainers] <int>\n", argv0);
+  exit(-1);
+}
 
 /*
  * returns the distance between 2 points
@@ -129,50 +158,80 @@ int32_t rand_outcome(double probability) {
  * Print a region
  */
 void print_region (region_t *region) {
+  char char_arr[MAX_ROW][MAX_COL];
+  
   for (int32_t i = 0; i < MAX_ROW; i++) {
     for (int32_t j = 0; j < MAX_COL; j++) {
-      char terrain_char;
-      
-      if (pc.pos_i == i && pc.pos_j == j) {
-        terrain_char = CHAR_PC;
-      } else {
-      enum terrain tmp = region->tile_arr[i][j].ter;
-        switch (tmp) {
-          case ter_border:
-            terrain_char = CHAR_BORDER;
-            break;
-          case ter_clearing:
-            terrain_char = CHAR_CLEARING;
-            break;
-          case ter_grass:
-            terrain_char = CHAR_GRASS;
-            break;
-          case ter_boulder:
-            terrain_char = CHAR_BOULDER;
-            break;
-          case ter_tree:
-            terrain_char = CHAR_TREE;
-            break;
-          case ter_mountain:
-            terrain_char = CHAR_MOUNTAIN;
-            break;
-          case ter_forest:
-            terrain_char = CHAR_FOREST;
-            break;
-          case ter_path:
-            terrain_char = CHAR_PATH;
-            break;
-          case ter_center:
-            terrain_char = CHAR_CENTER;
-            break;
-          case ter_mart:
-            terrain_char = CHAR_MART;
-            break;
-          default:
-            terrain_char = CHAR_UNDEFINED;
-        }
+      terrain_t ter = region->tile_arr[i][j].ter;
+      switch (ter) {
+        case ter_border:
+          char_arr[i][j] = CHAR_BORDER;
+          break;
+        case ter_clearing:
+          char_arr[i][j] = CHAR_CLEARING;
+          break;
+        case ter_grass:
+          char_arr[i][j] = CHAR_GRASS;
+          break;
+        case ter_boulder:
+          char_arr[i][j] = CHAR_BOULDER;
+          break;
+        case ter_tree:
+          char_arr[i][j] = CHAR_TREE;
+          break;
+        case ter_mountain:
+          char_arr[i][j] = CHAR_MOUNTAIN;
+          break;
+        case ter_forest:
+          char_arr[i][j] = CHAR_FOREST;
+          break;
+        case ter_path:
+          char_arr[i][j] = CHAR_PATH;
+          break;
+        case ter_center:
+          char_arr[i][j] = CHAR_CENTER;
+          break;
+        case ter_mart:
+          char_arr[i][j] = CHAR_MART;
+          break;
+        default:
+          char_arr[i][j] = CHAR_UNDEFINED;
       }
-      printf("%c", terrain_char);
+    }
+  }
+
+  npc_t *p = (region->npc_arr);
+  for (int32_t k = 0; k < 2; k++, p++) { // sizeof(region->npc_arr)/sizeof(region->npc_arr[0])
+    trainer_t tnr = p->tnr;
+    switch (tnr) {
+      case tnr_hiker:
+        char_arr[p->pos_i][p->pos_j] = CHAR_HIKER;
+        break;
+      case tnr_rival:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_RIVAL;
+        break;
+      case tnr_pacer:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_PACER;
+        break;
+      case tnr_wanderer:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_WANDERER;
+        break;
+      case tnr_stationary:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_STATIONARY;
+        break;
+      case tnr_rand_walker:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_RAND_WALKER;
+        break;
+      default:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_UNDEFINED;
+    }
+  }
+  
+  char_arr[pc.pos_i][pc.pos_j] = CHAR_PC;
+
+  for (int32_t i = 0; i < MAX_ROW; i++) {
+    for (int32_t j = 0; j < MAX_COL; j++) {
+      putchar(char_arr[i][j]);
     }
     printf("\n");
   }
@@ -503,6 +562,18 @@ void init_region (region_t *region,
     }
   }
 
+  // Populate npc trainers
+  region->num_npc = 2;
+  npc_t *new_npc_arr = malloc(region->num_npc * sizeof(*(new_npc_arr)));
+  new_npc_arr[0].pos_i = 2;
+  new_npc_arr[0].pos_j = 2;
+  new_npc_arr[0].tnr = tnr_hiker;
+
+  new_npc_arr[1].pos_i = 3;
+  new_npc_arr[1].pos_j = 3;
+  new_npc_arr[1].tnr = tnr_pacer;
+  region->npc_arr = new_npc_arr;
+
   return;
 }
 
@@ -576,20 +647,15 @@ static int32_t path_cmp(const void *key, const void *with) {
  * Returns distance in number of steps between the points.
  * INT_MAX for no valid route.
  */
-static void dijkstra(region_t *region, enum trainer tnr,
+static void dijkstra(region_t *region, trainer_t tnr,
                    int32_t pc_i, int32_t pc_j,
                    int32_t dist_map[MAX_ROW][MAX_COL]) {
 
   static path_t path[MAX_ROW][MAX_COL], *p;
   heap_t h;
   uint32_t i, j;
-  enum terrain ter;
+  terrain_t ter;
   int32_t neighbor_cost;
-
-  // // Before anything, check if we are starting somewhere with cost infinity
-  // if (travel_times[region->tile_arr[from_i][from_j].ter][tnr]  == INT_MAX) {
-  //   return INT_MAX;
-  // }
 
   for (i = 0; i < MAX_ROW; i++) {
     for (j = 0; j < MAX_COL; j++) {
@@ -809,16 +875,23 @@ void free_all_regions() {
 
 int main (int argc, char *argv[])
 {
-  // Handle random seed
-  struct timeval t;
-  uint32_t seed;
-  if (argc == 2) {
-    seed = atoi(argv[1]);
-  } else {
-    gettimeofday(&t, NULL);
-    seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
+  // handle command line inputs
+  if (argc != 1 && argc != 3) {
+    usage(argv[0]);
   }
-  printf("Using seed: %u\n", seed);
+  if (argc == 3) {
+    if (!strcmp(argv[1], "--numtrainers")) {
+      numtrainers = atoi(argv[2]);
+    } else {
+      usage(argv[0]);
+      return -1;
+    }
+  }
+
+  // generate random seed
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
   srand(seed);
 
   // start in center of the world. 
@@ -830,14 +903,11 @@ int main (int argc, char *argv[])
   // Allocate memory for and generate the starting region
   region_t *new_region = malloc(sizeof(*new_region));
   region_ptr[pc.region_x][pc.region_y] = new_region;
-
   init_region(region_ptr[pc.region_x][pc.region_y], -1, -1, -1, -1, 1, 1);
 
   init_pc();
   dijkstra(region_ptr[pc.region_x][pc.region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
   dijkstra(region_ptr[pc.region_x][pc.region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
-  print_dist_map(dist_map_hiker);
-  print_dist_map(dist_map_rival);
 
   printf("Current region (%d,%d)", pc.region_x - WORLD_SIZE/2, pc.region_y - WORLD_SIZE/2);
   printf(", player at (%d,%d)\n", pc.pos_i, pc.pos_j);

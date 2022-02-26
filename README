@@ -10,13 +10,11 @@ README
 Description
 ---
 Regions are procedurally generated. Controls can be used to navigate between regions.
-A player is initialized on a random path tile. Distance maps are then generated for
-Hiker and Rival trainer types, using Dijkstra's algorithm to find the optimal path to
-the player character.
+A random number of trainers will populate each region. If the player is reached it will 
+teleport to a new location within the region.
 
 Key
 ---
-@  Player Character
 %  Border
 %  Boulder
 ^  Tree
@@ -28,8 +26,22 @@ M  Poke Mart
 %  Mountain
 ^  Forest
 
+@  Player Character
+h  Hiker
+r  Rival
+p  Pacer
+w  Wanderer
+s  Stationary
+n  Random Walker
+
 Controls
 ---
 n,s,e,w - Move one region North, South, East, or West respectively
 f [x] [y] - Fly to a specified region
 q - Quit
+
+Switches
+---
+--numtrainers [int] - The number of trainers that will spawn in each region. 
+                      Must be an integer greater than or equal to 0.
+--seed [int] - The seed that will be used to determine random events
