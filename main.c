@@ -867,6 +867,7 @@ void free_all_regions() {
   for (int32_t i = 0; i < WORLD_SIZE; i++) {
     for (int32_t j = 0; j < WORLD_SIZE; j++) {
       if (region_ptr[i][j] != NULL) {
+        free(region_ptr[i][j]->npc_arr);
         free(region_ptr[i][j]);
       }
     }
