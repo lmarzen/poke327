@@ -34,14 +34,7 @@ w  Wanderer
 s  Stationary
 n  Random Walker
 
-Controls
----
-n,s,e,w - Move one region North, South, East, or West respectively
-f [x] [y] - Fly to a specified region
-q - Quit
-
 Switches
 ---
 --numtrainers [int] - The number of trainers that will spawn in each region. 
-                      Must be an integer greater than or equal to 0.
---seed [int] - The seed that will be used to determine random events
+                      If less than 0, random number of trainers will be spawned. (default)

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include "heap.h"
 
@@ -23,6 +24,7 @@
 #define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers
 #define MIN_TRAINERS 6
 #define MAX_TRAINERS 12
+#define FRAMETIME 250000 // in microseconds
 
 #define CHAR_BORDER       '%';
 #define CHAR_BOULDER      '%';
@@ -80,21 +82,19 @@ typedef struct pos {
   int32_t i, j;
 } pos_t;
 
-typedef struct pc {
-  int32_t region_x, region_y;
-  int32_t pos_i, pos_j;
-} pc_t;
-
-typedef struct npc {
+typedef struct character {
   trainer_t tnr; 
   int32_t pos_i, pos_j;
-} npc_t;
+  int32_t exists;
+  heap_node_t *hn;
+  int32_t movetime;
+} character_t;
 
 typedef struct region {
   tile_t tile_arr[MAX_ROW][MAX_COL];
   int32_t N_exit_j, E_exit_i, S_exit_j, W_exit_i;
   int32_t num_npc;
-  npc_t *npc_arr; // pointer to an array that will be dynamically allocated
+  character_t *npc_arr; // pointer to an array that will be dynamically allocated
 } region_t;
 
 typedef struct path {
@@ -107,11 +107,6 @@ typedef struct path {
 // Global variables
 // 2D array of pointers, each pointer points to one of the regions the world
 region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
-int32_t dist_map_hiker[MAX_ROW][MAX_COL];
-int32_t dist_map_rival[MAX_ROW][MAX_COL];
-pc_t pc;
-int32_t seed;
-int32_t numtrainers = NUM_TRAINERS;
 static const int32_t travel_times[11][7] = {
                   /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
   /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
@@ -157,7 +152,7 @@ int32_t rand_outcome(double probability) {
 /*
  * Print a region
  */
-void print_region (region_t *region) {
+void print_region (region_t *region, character_t *pc) {
   char char_arr[MAX_ROW][MAX_COL];
   
   for (int32_t i = 0; i < MAX_ROW; i++) {
@@ -200,40 +195,42 @@ void print_region (region_t *region) {
     }
   }
 
-  npc_t *p = (region->npc_arr);
-  for (int32_t k = 0; k < 2; k++, p++) { // sizeof(region->npc_arr)/sizeof(region->npc_arr[0])
-    trainer_t tnr = p->tnr;
-    switch (tnr) {
-      case tnr_hiker:
-        char_arr[p->pos_i][p->pos_j] = CHAR_HIKER;
-        break;
-      case tnr_rival:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_RIVAL;
-        break;
-      case tnr_pacer:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_PACER;
-        break;
-      case tnr_wanderer:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_WANDERER;
-        break;
-      case tnr_stationary:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_STATIONARY;
-        break;
-      case tnr_rand_walker:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_RAND_WALKER;
-        break;
-      default:
-        char_arr[p->pos_i][p->pos_j]  = CHAR_UNDEFINED;
+  character_t *p = (region->npc_arr);
+  for (int32_t k = 0; k < region->num_npc; k++, p++) {
+    if (p->exists) {
+      trainer_t tnr = p->tnr;
+      switch (tnr) {
+        case tnr_hiker:
+          char_arr[p->pos_i][p->pos_j] = CHAR_HIKER;
+          break;
+        case tnr_rival:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_RIVAL;
+          break;
+        case tnr_pacer:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_PACER;
+          break;
+        case tnr_wanderer:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_WANDERER;
+          break;
+        case tnr_stationary:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_STATIONARY;
+          break;
+        case tnr_rand_walker:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_RAND_WALKER;
+          break;
+        default:
+          char_arr[p->pos_i][p->pos_j]  = CHAR_UNDEFINED;
+      }
     }
   }
   
-  char_arr[pc.pos_i][pc.pos_j] = CHAR_PC;
+  char_arr[pc->pos_i][pc->pos_j] = CHAR_PC;
 
   for (int32_t i = 0; i < MAX_ROW; i++) {
     for (int32_t j = 0; j < MAX_COL; j++) {
       putchar(char_arr[i][j]);
     }
-    printf("\n");
+    putchar('\n');
   }
 }
 
@@ -250,7 +247,8 @@ void print_region (region_t *region) {
 void init_region (region_t *region, 
                   int32_t N_exit_j, int32_t E_exit_i,
                   int32_t S_exit_j, int32_t W_exit_i,
-                  int32_t place_center, int32_t place_mart) {
+                  int32_t place_center, int32_t place_mart,
+                  int32_t numtrainers_opt) {
   int32_t randy; // note... int num = (rand() % (upper - lower + 1)) + lower;
 
   // create a random number of random seeds
@@ -563,17 +561,60 @@ void init_region (region_t *region,
   }
 
   // Populate npc trainers
-  region->num_npc = 2;
-  npc_t *new_npc_arr = malloc(region->num_npc * sizeof(*(new_npc_arr)));
-  new_npc_arr[0].pos_i = 2;
-  new_npc_arr[0].pos_j = 2;
-  new_npc_arr[0].tnr = tnr_hiker;
+  if (numtrainers_opt < 0) {
+    // generate a random number of npcs to spawn
+    region->num_npc = (rand() % (MAX_TRAINERS - MIN_TRAINERS + 1)) + MIN_TRAINERS;
+  } else {
+    region->num_npc = numtrainers_opt;
+  }
+  
+  character_t *new_npc_arr = malloc(region->num_npc * sizeof(*(new_npc_arr)));
+  for (int32_t m = 0; m < region->num_npc; m++) {
+    int32_t spawn_attempts = 5;
+    new_npc_arr[m].exists = 0;
+    new_npc_arr[m].movetime = 0;
+    while (spawn_attempts != 0) {
+      int32_t ti = (rand() % (MAX_ROW - 2)) + 1;
+      int32_t tj = (rand() % (MAX_COL - 2)) + 1;
+      trainer_t tt;
+      if (m == 0) {
+        tt = tnr_rival;
+      } else if (m == 1) {
+        tt = tnr_hiker;
+      } else {
+        tt = (rand() % (tnr_rand_walker - tnr_hiker + 1)) + tnr_hiker;
+      }
+      int32_t is_valid = 1;
 
-  new_npc_arr[1].pos_i = 3;
-  new_npc_arr[1].pos_j = 3;
-  new_npc_arr[1].tnr = tnr_pacer;
+      // verify this npc can move on the tile on to the tile it spawns on
+      if (travel_times[region->tile_arr[ti][tj].ter][tt] == INT_MAX) {
+        is_valid = 0;
+      }
+
+      // verify no other npcs occupy this space
+      if (is_valid) {
+        for (int32_t n = 0; n < m; n++) {
+          if (new_npc_arr[n].pos_i == ti && new_npc_arr[n].pos_j == tj) {
+            is_valid = 0;
+            break;
+          }
+        }
+      }
+
+      if (is_valid) {
+        new_npc_arr[m].pos_i = ti;
+        new_npc_arr[m].pos_j = tj;
+        new_npc_arr[m].tnr = tt;
+        new_npc_arr[m].exists = 1;
+        spawn_attempts = 0;
+      } else {
+        --spawn_attempts;
+      }
+
+    }
+  }
+
   region->npc_arr = new_npc_arr;
-
   return;
 }
 
@@ -765,12 +806,16 @@ static void dijkstra(region_t *region, trainer_t tnr,
   return;
 }
 
-void init_pc () {
+void init_pc (character_t *pc, region_t *region) {
+  pc->exists = 1;
+  pc->movetime = 0;
+  pc->tnr = tnr_pc;
+
   int32_t found_location = 0;
   while (found_location != 1) {
-    pc.pos_i = (rand() % (MAX_ROW - 2)) + 1;
-    pc.pos_j = (rand() % (MAX_COL - 2)) + 1;
-    if (region_ptr[pc.region_x][pc.region_y]->tile_arr[pc.pos_i][pc.pos_j].ter == ter_path) {
+    pc->pos_i = (rand() % (MAX_ROW - 2)) + 1;
+    pc->pos_j = (rand() % (MAX_COL - 2)) + 1;
+    if (region->tile_arr[pc->pos_i][pc->pos_j].ter == ter_path) {
       found_location = 1;
     }
   }
@@ -789,7 +834,7 @@ void print_dist_map(int32_t dist_map[][MAX_COL]) {
   }
 }
 
-void load_region(int32_t region_x, int32_t region_y) {
+void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
   // If the region we are in is uninitialized, then generate the region.
   if (region_ptr[region_x][region_y] == NULL) {
     region_t *new_region = malloc(sizeof(*new_region));
@@ -827,7 +872,7 @@ void load_region(int32_t region_x, int32_t region_y) {
         W_exit = region_ptr[region_x - 1][region_y]->E_exit_i; /* West Region, East Exit */
       }
     }
-    init_region(region_ptr[region_x][region_y], N_exit, E_exit, S_exit, W_exit, place_center, place_mart);
+    init_region(region_ptr[region_x][region_y], N_exit, E_exit, S_exit, W_exit, place_center, place_mart, num_tnr);
   
     // If on the edge of the world, block exits with boulders so that player cannot
     // fall out of the world
@@ -848,16 +893,6 @@ void load_region(int32_t region_x, int32_t region_y) {
       region_ptr[region_x][region_y]->tile_arr[W_exit][0].ter = ter_border;
     }
   }
-  
-  init_pc(); // random player cords
-  dijkstra(region_ptr[region_x][region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
-  dijkstra(region_ptr[region_x][region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
-  print_dist_map(dist_map_hiker);
-  print_dist_map(dist_map_rival);
-
-  printf("Current region (%d,%d)", region_x - WORLD_SIZE/2, region_y - WORLD_SIZE/2);
-  printf(", player at (%d,%d)\n", pc.pos_i, pc.pos_j);
-  print_region(region_ptr[region_x][region_y]);
 }
 
 /*
@@ -874,15 +909,39 @@ void free_all_regions() {
   }
 }
 
+static int32_t movetime_cmp(const void *key, const void *with) {
+  return ((character_t *) key)->movetime - ((character_t *) with)->movetime;
+}
+
+/*
+ * Add all trainers in a region to the a queue
+ */
+void enqueue_trainers(heap_t *queue, region_t *region) {
+  for (int32_t i = 0; i < region->num_npc; i++) {
+    if (region->npc_arr[i].exists) {
+      region->npc_arr[i].hn = heap_insert(queue, &(region->npc_arr[i]));
+    }
+  }
+}
+
 int main (int argc, char *argv[])
 {
+  int32_t dist_map_hiker[MAX_ROW][MAX_COL];
+  int32_t dist_map_rival[MAX_ROW][MAX_COL];
+  int32_t seed;
+  int32_t numtrainers_opt = NUM_TRAINERS;
+  int32_t loaded_region_x = WORLD_SIZE/2;
+  int32_t loaded_region_y = WORLD_SIZE/2;
+  //int32_t prev_region_x = WORLD_SIZE/2;
+  //int32_t prev_region_y = WORLD_SIZE/2;
+
   // handle command line inputs
   if (argc != 1 && argc != 3) {
     usage(argv[0]);
   }
   if (argc == 3) {
     if (!strcmp(argv[1], "--numtrainers")) {
-      numtrainers = atoi(argv[2]);
+      numtrainers_opt = atoi(argv[2]);
     } else {
       usage(argv[0]);
       return -1;
@@ -897,34 +956,55 @@ int main (int argc, char *argv[])
 
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
-  pc.region_x = WORLD_SIZE/2;
-  pc.region_y = WORLD_SIZE/2;
-  int32_t prev_region_x = pc.region_x;
-  int32_t prev_region_y = pc.region_y;
+  character_t pc;
   // Allocate memory for and generate the starting region
   region_t *new_region = malloc(sizeof(*new_region));
-  region_ptr[pc.region_x][pc.region_y] = new_region;
-  init_region(region_ptr[pc.region_x][pc.region_y], -1, -1, -1, -1, 1, 1);
+  region_ptr[loaded_region_x][loaded_region_y] = new_region;
+  init_region(region_ptr[loaded_region_x][loaded_region_y], -1, -1, -1, -1, 1, 1, numtrainers_opt);
 
-  init_pc();
-  dijkstra(region_ptr[pc.region_x][pc.region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
-  dijkstra(region_ptr[pc.region_x][pc.region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
+  init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
+  
+  heap_t move_queue;
+  character_t *c;
+  heap_init(&move_queue, movetime_cmp, NULL);
+  // pc.hn = heap_insert(&move_queue, &pc);
 
-  printf("Current region (%d,%d)", pc.region_x - WORLD_SIZE/2, pc.region_y - WORLD_SIZE/2);
-  printf(", player at (%d,%d)\n", pc.pos_i, pc.pos_j);
-  print_region(region_ptr[pc.region_x][pc.region_y]);
+  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
+  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
+  enqueue_trainers(&move_queue, region_ptr[loaded_region_x][loaded_region_y]);
+
+  print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+
 
   // Run game
-  uint32_t running = 1;
-  while(running) { 
-    if (pc.region_x != prev_region_x || pc.region_y != prev_region_y) {
-      load_region(pc.region_x, pc.region_y);
-      prev_region_x = pc.region_x;
-      prev_region_y = pc.region_y;
-    }
-    process_input(&pc.region_x, &pc.region_y, &running); 
-  }
+  // uint32_t running = 1;
+  // while(running) { 
+    // // LEGACY MOVE REGION CODE
+    // if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
+    //   load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
+    //   heap_delete(&move_queue);
+    //   heap_init(&move_queue, movetime_cmp, NULL);
+    //   enqueue_trainers(&move_queue, region_ptr[loaded_region_x][loaded_region_y]);
+    //   prev_region_x = loaded_region_x;
+    //   prev_region_y = loaded_region_y;
 
+    //   init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
+    //   //dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
+    //   //dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
+    // }
+  print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+
+  // process_input(&loaded_region_x, &loaded_region_y, &running); 
+
+  usleep(FRAMETIME);
+  //character_t *c = heap_remove_min(&move_queue);
+  while ((c = heap_remove_min(&move_queue))) {
+    c->hn = NULL;
+    printf("%d\n", c->tnr);
+  }
+  // }
+
+  heap_delete(&move_queue);
   free_all_regions();
 
   return 0;
