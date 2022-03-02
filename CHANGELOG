@@ -12,4 +12,7 @@
              Began work on implementing Dijkstra's algorithm.
 02/14/2022 - Completed and debugged  Dijkstra's algorithm.
              Added function to print distance maps for various trainer types.
-02/25/2022 - Optimized distance map calculations
+02/25/2022 - Optimized distance map calculations.
+             Added --numtrainers and --seed switches.
+03/02/2022 - Added priority queue to determine npc's and player movements should be processed.
+             Implemented npc movement.

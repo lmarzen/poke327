@@ -26,8 +26,8 @@
 #define MAX_TRAINERS 12
 #define FRAMETIME 250000 // in microseconds
 #define TICKS_PER_SEC 20
-#define FRAMES_PER_SEC 1e6/FRAMETIME
-#define TICKS_PER_FRAME TICKS_PER_SEC/FRAMES_PER_SEC
+#define FRAMES_PER_SEC (1000000/FRAMETIME)
+#define TICKS_PER_FRAME (TICKS_PER_SEC/FRAMES_PER_SEC)
 
 #define CHAR_BORDER       '%';
 #define CHAR_BOULDER      '%';
@@ -88,7 +88,6 @@ typedef struct pos {
 typedef struct character {
   trainer_t tnr; 
   int32_t pos_i, pos_j;
-  int32_t exists;
   heap_node_t *hn;
   int32_t movetime;
 } character_t;
@@ -128,7 +127,7 @@ static const int32_t travel_times[11][7] = {
 };
 
 void usage(const char *argv0) {
-  fprintf(stderr, "Usage: %s [--numtrainers] <int>\n", argv0);
+  fprintf(stderr, "Usage: %s [--numtrainers|--seed] <int>\n", argv0);
   exit(-1);
 }
 
@@ -202,30 +201,27 @@ void print_region (region_t *region, character_t *pc) {
 
   character_t *p = (region->npc_arr);
   for (int32_t k = 0; k < region->num_npc; k++, p++) {
-    if (p->exists) {
-      trainer_t tnr = p->tnr;
-      switch (tnr) {
-        case tnr_hiker:
-          char_arr[p->pos_i][p->pos_j] = CHAR_HIKER;
-          break;
-        case tnr_rival:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_RIVAL;
-          break;
-        case tnr_pacer:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_PACER;
-          break;
-        case tnr_wanderer:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_WANDERER;
-          break;
-        case tnr_stationary:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_STATIONARY;
-          break;
-        case tnr_rand_walker:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_RAND_WALKER;
-          break;
-        default:
-          char_arr[p->pos_i][p->pos_j]  = CHAR_UNDEFINED;
-      }
+    switch (p->tnr) {
+      case tnr_hiker:
+        char_arr[p->pos_i][p->pos_j] = CHAR_HIKER;
+        break;
+      case tnr_rival:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_RIVAL;
+        break;
+      case tnr_pacer:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_PACER;
+        break;
+      case tnr_wanderer:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_WANDERER;
+        break;
+      case tnr_stationary:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_STATIONARY;
+        break;
+      case tnr_rand_walker:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_RAND_WALKER;
+        break;
+      default:
+        char_arr[p->pos_i][p->pos_j]  = CHAR_UNDEFINED;
     }
   }
   
@@ -576,7 +572,6 @@ void init_region (region_t *region,
   character_t *new_npc_arr = malloc(region->num_npc * sizeof(*(new_npc_arr)));
   for (int32_t m = 0; m < region->num_npc; m++) {
     int32_t spawn_attempts = 5;
-    new_npc_arr[m].exists = 0;
     new_npc_arr[m].movetime = 0;
     while (spawn_attempts != 0) {
       int32_t ti = (rand() % (MAX_ROW - 2)) + 1;
@@ -610,7 +605,6 @@ void init_region (region_t *region,
         new_npc_arr[m].pos_i = ti;
         new_npc_arr[m].pos_j = tj;
         new_npc_arr[m].tnr = tt;
-        new_npc_arr[m].exists = 1;
         spawn_attempts = 0;
       } else {
         --spawn_attempts;
@@ -830,7 +824,6 @@ static void dijkstra(region_t *region, trainer_t tnr,
 }
 
 void init_pc (character_t *pc, region_t *region) {
-  pc->exists = 1;
   pc->movetime = 0;
   pc->tnr = tnr_pc;
 
@@ -841,8 +834,7 @@ void init_pc (character_t *pc, region_t *region) {
     if (region->tile_arr[pc->pos_i][pc->pos_j].ter == ter_path) {
       found_location = 1;
       for (int32_t i = 0; i < region->num_npc; i++) {
-        if (region->npc_arr[i].exists && 
-            region->npc_arr[i].pos_i == pc->pos_i && 
+        if (region->npc_arr[i].pos_i == pc->pos_i && 
             region->npc_arr[i].pos_j == pc->pos_j) {
           found_location = 0;
           break;
@@ -945,24 +937,24 @@ static int32_t movetime_cmp(const void *key, const void *with) {
 }
 
 /*
- * Add all trainers in a region to the a queue
+ * Initializes the priority queue with the player and trainers from a region
  */
-void enqueue_trainers(heap_t *queue, region_t *region) {
+void init_trainer_pq(heap_t *queue, character_t *pc, region_t *region) {
+  heap_init(queue, movetime_cmp, NULL);
+  pc->hn = heap_insert(queue, pc);
   for (int32_t i = 0; i < region->num_npc; i++) {
-    if (region->npc_arr[i].exists) {
-      region->npc_arr[i].hn = heap_insert(queue, &(region->npc_arr[i]));
-    }
+    region->npc_arr[i].hn = heap_insert(queue, &(region->npc_arr[i]));
   }
 }
 
 /*
- * Move a trainer, pass null i
+ * Process a trainer's movement
  */
 void move_trainer(character_t *c, region_t *region) {
   switch (c->tnr)
   {
   case tnr_pc:
-      init_pc(c, region);
+    //init_pc(c, region);
     break;
   case tnr_hiker:
     printf("Move tnr_hiker\n");
@@ -981,8 +973,7 @@ void move_trainer(character_t *c, region_t *region) {
     c->movetime = 100;
     break;
   case tnr_stationary:
-    printf("Move tnr_stationary\n");
-    c->movetime = 100;
+    // Do nothing
     break;
   case tnr_rand_walker:
     printf("Move tnr_rand_walker\n");
@@ -993,7 +984,21 @@ void move_trainer(character_t *c, region_t *region) {
     exit(1);
     break;
   }
+  c->movetime = travel_times[ (region->tile_arr[c->pos_i][c->pos_j].ter) ][ c->tnr ];
+  return;
+}
 
+/*
+ * Step player character and npc movetimes by amount
+ */
+void step_all_movetimes(character_t *pc, region_t *region, int32_t amount) {
+  if (amount == 0) {
+    return;
+  }
+  pc->movetime -= amount;
+  for (int32_t i = 0; i < region->num_npc; i++) {
+    region->npc_arr[i].movetime -= amount;
+  }
   return;
 }
 
@@ -1008,6 +1013,12 @@ int main (int argc, char *argv[])
   int32_t prev_pc_pos_i = -1;
   int32_t prev_pc_pos_j = -1;
   
+   // generate random seed
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
+  srand(seed);
+
   // handle command line inputs
   if (argc != 1 && argc != 3) {
     usage(argv[0]);
@@ -1015,17 +1026,13 @@ int main (int argc, char *argv[])
   if (argc == 3) {
     if (!strcmp(argv[1], "--numtrainers")) {
       numtrainers_opt = atoi(argv[2]);
+    } else if (!strcmp(argv[1], "--numtrainers")) {
+      seed = atoi(argv[2]);
     } else {
       usage(argv[0]);
       return -1;
     }
   }
-
-  // generate random seed
-  struct timeval t;
-  gettimeofday(&t, NULL);
-  seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
-  srand(seed);
 
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
@@ -1039,15 +1046,11 @@ int main (int argc, char *argv[])
   
   heap_t move_queue;
   character_t *c;
-  heap_init(&move_queue, movetime_cmp, NULL);
-  // pc.hn = heap_insert(&move_queue, &pc);
-
+  init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
-  enqueue_trainers(&move_queue, region_ptr[loaded_region_x][loaded_region_y]);
 
   print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
-
 
   // Run game
   uint32_t running = 1;
@@ -1055,9 +1058,6 @@ int main (int argc, char *argv[])
     // LEGACY MOVE REGION CODE
     // if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
     //   load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
-    //   heap_delete(&move_queue);
-    //   heap_init(&move_queue, movetime_cmp, NULL);
-    //   enqueue_trainers(&move_queue, region_ptr[loaded_region_x][loaded_region_y]);
     //   prev_region_x = loaded_region_x;
     //   prev_region_y = loaded_region_y;
 
@@ -1066,48 +1066,47 @@ int main (int argc, char *argv[])
     //   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
     //   print_dist_map(dist_map_hiker);
     //   print_dist_map(dist_map_rival);
+    //   init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
     // }
 
     if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
-        dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
-        dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
-        prev_pc_pos_i = loaded_region_x;
-        prev_pc_pos_j = loaded_region_y;
+      dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
+      dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
+      prev_pc_pos_i = loaded_region_x;
+      prev_pc_pos_j = loaded_region_y;
     }
 
-
-
-    usleep(FRAMETIME);
-    //int32_t time_step = 
-    for (int32_t i = 0; i < move_queue.size; i++) { //WIP
-      c = heap_remove_min(&move_queue);
-
-      if (c->movetime <= 0) {
-        move_trainer(c, region_ptr[loaded_region_x][loaded_region_y]);
+    int32_t ticks_since_last_frame = 0;
+    while (ticks_since_last_frame <= TICKS_PER_FRAME) {
+      int32_t step = ((character_t*)heap_peek_min(&move_queue))->movetime;
+      if (step <= TICKS_PER_FRAME) {
+        step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
+        while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
+          c = heap_remove_min(&move_queue);
+          move_trainer(c, region_ptr[loaded_region_x][loaded_region_y]);
+          c->hn = heap_insert(&move_queue, c);
+        }
+      } else {
+        step = TICKS_PER_FRAME;
       }
-      --c->movetime;
-      c->hn = heap_insert(&move_queue, c);
-      printf("%d  %d\n", c->tnr, c->movetime);
+      step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
+      ticks_since_last_frame += step;
     }
-
+    usleep(FRAMETIME);
     print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
 
     //process_input(&loaded_region_x, &loaded_region_y, &running); 
   }
-  
+
+  // debug
+  while (c = heap_remove_min(&move_queue)) {
+    printf("%d  %d\n", c->tnr, c->movetime);
+  }
 
   
 
-  
 
-  // printf("%------------------\n");
-  // while ((c = heap_remove_min(&move_queue))) {
-  //   c->hn = NULL;
-  //   printf("%d\n", c->tnr);
-  // }
-  // }
-
-  // heap_delete(&move_queue);
+  heap_delete(&move_queue);
   free_all_regions();
 
   return 0;

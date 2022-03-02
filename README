@@ -38,3 +38,4 @@ Switches
 ---
 --numtrainers [int] - The number of trainers that will spawn in each region. 
                       If less than 0, random number of trainers will be spawned. (default)
+--seed [int] - The seed that will determine all random events.
