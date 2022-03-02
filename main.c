@@ -25,6 +25,9 @@
 #define MIN_TRAINERS 6
 #define MAX_TRAINERS 12
 #define FRAMETIME 250000 // in microseconds
+#define TICKS_PER_SEC 20
+#define FRAMES_PER_SEC 1e6/FRAMETIME
+#define TICKS_PER_FRAME TICKS_PER_SEC/FRAMES_PER_SEC
 
 #define CHAR_BORDER       '%';
 #define CHAR_BOULDER      '%';
@@ -107,6 +110,8 @@ typedef struct path {
 // Global variables
 // 2D array of pointers, each pointer points to one of the regions the world
 region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
+int32_t dist_map_hiker[MAX_ROW][MAX_COL];
+int32_t dist_map_rival[MAX_ROW][MAX_COL];
 static const int32_t travel_times[11][7] = {
                   /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
   /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
@@ -689,22 +694,32 @@ static int32_t path_cmp(const void *key, const void *with) {
  * INT_MAX for no valid route.
  */
 static void dijkstra(region_t *region, trainer_t tnr,
-                   int32_t pc_i, int32_t pc_j,
-                   int32_t dist_map[MAX_ROW][MAX_COL]) {
+                   int32_t pc_i, int32_t pc_j) {
 
   static path_t path[MAX_ROW][MAX_COL], *p;
+  static uint32_t initialized = 0;
   heap_t h;
   uint32_t i, j;
   terrain_t ter;
   int32_t neighbor_cost;
 
+
+  if (!initialized) {
+    for (i = 0; i < MAX_ROW; i++) {
+      for (j = 0; j < MAX_COL; j++) {
+        path[i][j].pos_i = i;
+        path[i][j].pos_j = j;
+      }
+    }
+    initialized = 1;
+  }
+
   for (i = 0; i < MAX_ROW; i++) {
     for (j = 0; j < MAX_COL; j++) {
-      path[i][j].pos_i = i;
-      path[i][j].pos_j = j;
       path[i][j].cost = INT_MAX;
     }
   }
+
   path[pc_i][pc_j].cost = 0;
 
   heap_init(&h, path_cmp, NULL);
@@ -796,10 +811,18 @@ static void dijkstra(region_t *region, trainer_t tnr,
     }
   }
 
-  for (int32_t i = 0; i < MAX_ROW; i++) {
-    for (int32_t j = 0; j < MAX_COL; j++) {
-      dist_map[i][j] = path[i][j].cost;
+  if (tnr == tnr_hiker) {
+    for (int32_t i = 0; i < MAX_ROW; i++) {
+      for (int32_t j = 0; j < MAX_COL; j++) {
+        dist_map_hiker[i][j] = path[i][j].cost;
       }
+    }
+  } else if (tnr == tnr_rival) {
+    for (int32_t i = 0; i < MAX_ROW; i++) {
+      for (int32_t j = 0; j < MAX_COL; j++) {
+        dist_map_rival[i][j] = path[i][j].cost;
+      }
+    }
   }
 
   heap_delete(&h);
@@ -817,6 +840,14 @@ void init_pc (character_t *pc, region_t *region) {
     pc->pos_j = (rand() % (MAX_COL - 2)) + 1;
     if (region->tile_arr[pc->pos_i][pc->pos_j].ter == ter_path) {
       found_location = 1;
+      for (int32_t i = 0; i < region->num_npc; i++) {
+        if (region->npc_arr[i].exists && 
+            region->npc_arr[i].pos_i == pc->pos_i && 
+            region->npc_arr[i].pos_j == pc->pos_j) {
+          found_location = 0;
+          break;
+        }
+      }
     }
   }
 }
@@ -924,17 +955,59 @@ void enqueue_trainers(heap_t *queue, region_t *region) {
   }
 }
 
+/*
+ * Move a trainer, pass null i
+ */
+void move_trainer(character_t *c, region_t *region) {
+  switch (c->tnr)
+  {
+  case tnr_pc:
+      init_pc(c, region);
+    break;
+  case tnr_hiker:
+    printf("Move tnr_hiker\n");
+    c->movetime = 100;
+    break;
+  case tnr_rival:
+    printf("Move tnr_rival\n");
+    c->movetime = 100;
+    break;
+  case tnr_pacer:
+    printf("Move tnr_pacer\n");
+    c->movetime = 100;
+    break;
+  case tnr_wanderer:
+    printf("Move tnr_wanderer\n");
+    c->movetime = 100;
+    break;
+  case tnr_stationary:
+    printf("Move tnr_stationary\n");
+    c->movetime = 100;
+    break;
+  case tnr_rand_walker:
+    printf("Move tnr_rand_walker\n");
+    c->movetime = 100;
+    break;
+  default:
+    printf("Error: Movement for trainer type %d has not been implemented!\n",c->tnr);
+    exit(1);
+    break;
+  }
+
+  return;
+}
+
 int main (int argc, char *argv[])
 {
-  int32_t dist_map_hiker[MAX_ROW][MAX_COL];
-  int32_t dist_map_rival[MAX_ROW][MAX_COL];
   int32_t seed;
   int32_t numtrainers_opt = NUM_TRAINERS;
   int32_t loaded_region_x = WORLD_SIZE/2;
   int32_t loaded_region_y = WORLD_SIZE/2;
   //int32_t prev_region_x = WORLD_SIZE/2;
   //int32_t prev_region_y = WORLD_SIZE/2;
-
+  int32_t prev_pc_pos_i = -1;
+  int32_t prev_pc_pos_j = -1;
+  
   // handle command line inputs
   if (argc != 1 && argc != 3) {
     usage(argv[0]);
@@ -969,17 +1042,17 @@ int main (int argc, char *argv[])
   heap_init(&move_queue, movetime_cmp, NULL);
   // pc.hn = heap_insert(&move_queue, &pc);
 
-  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
-  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
+  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
+  dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
   enqueue_trainers(&move_queue, region_ptr[loaded_region_x][loaded_region_y]);
 
   print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
 
 
   // Run game
-  // uint32_t running = 1;
-  // while(running) { 
-    // // LEGACY MOVE REGION CODE
+  uint32_t running = 1;
+  while(running) { 
+    // LEGACY MOVE REGION CODE
     // if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
     //   load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
     //   heap_delete(&move_queue);
@@ -989,22 +1062,52 @@ int main (int argc, char *argv[])
     //   prev_region_y = loaded_region_y;
 
     //   init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
-    //   //dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j, dist_map_hiker);
-    //   //dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j, dist_map_rival);
+    //   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
+    //   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
+    //   print_dist_map(dist_map_hiker);
+    //   print_dist_map(dist_map_rival);
     // }
-  print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
 
-  // process_input(&loaded_region_x, &loaded_region_y, &running); 
+    if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
+        dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
+        dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
+        prev_pc_pos_i = loaded_region_x;
+        prev_pc_pos_j = loaded_region_y;
+    }
 
-  usleep(FRAMETIME);
-  //character_t *c = heap_remove_min(&move_queue);
-  while ((c = heap_remove_min(&move_queue))) {
-    c->hn = NULL;
-    printf("%d\n", c->tnr);
+
+
+    usleep(FRAMETIME);
+    //int32_t time_step = 
+    for (int32_t i = 0; i < move_queue.size; i++) { //WIP
+      c = heap_remove_min(&move_queue);
+
+      if (c->movetime <= 0) {
+        move_trainer(c, region_ptr[loaded_region_x][loaded_region_y]);
+      }
+      --c->movetime;
+      c->hn = heap_insert(&move_queue, c);
+      printf("%d  %d\n", c->tnr, c->movetime);
+    }
+
+    print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+
+    //process_input(&loaded_region_x, &loaded_region_y, &running); 
   }
+  
+
+  
+
+  
+
+  // printf("%------------------\n");
+  // while ((c = heap_remove_min(&move_queue))) {
+  //   c->hn = NULL;
+  //   printf("%d\n", c->tnr);
+  // }
   // }
 
-  heap_delete(&move_queue);
+  // heap_delete(&move_queue);
   free_all_regions();
 
   return 0;
