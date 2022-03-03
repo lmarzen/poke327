@@ -25,7 +25,7 @@
 #define MIN_TRAINERS 6
 #define MAX_TRAINERS 12
 #define FRAMETIME 250000 // in microseconds
-#define TICKS_PER_SEC 20
+#define TICKS_PER_SEC 10
 #define FRAMES_PER_SEC (1000000/FRAMETIME)
 #define TICKS_PER_FRAME (TICKS_PER_SEC/FRAMES_PER_SEC)
 
@@ -72,6 +72,17 @@ typedef enum trainer {
   tnr_rand_walker
 } trainer_t;
 
+typedef enum direction {
+  dir_n,
+  dir_ne,
+  dir_e,
+  dir_se,
+  dir_s,
+  dir_sw,
+  dir_w,
+  dir_nw
+} direction_t;
+
 typedef struct tile {
   terrain_t ter;
 } tile_t;
@@ -90,6 +101,8 @@ typedef struct character {
   int32_t pos_i, pos_j;
   heap_node_t *hn;
   int32_t movetime;
+  direction_t dir;
+
 } character_t;
 
 typedef struct region {
@@ -124,6 +137,18 @@ static const int32_t travel_times[11][7] = {
   /* ter_mountain */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
   /* ter_forest   */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
   /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX}
+};
+
+static const int32_t dir_offsets[8][2] = {
+            /* { i, j} */
+  /* dir_n  */ {-1, 0},
+  /* dir_ne */ {-1, 1},
+  /* dir_e  */ { 0, 1},
+  /* dir_se */ { 1, 1},
+  /* dir_s  */ { 1, 0},
+  /* dir_sw */ { 1,-1},
+  /* dir_w  */ { 0,-1},
+  /* dir_nw */ {-1,-1}
 };
 
 void usage(const char *argv0) {
@@ -605,6 +630,9 @@ void init_region (region_t *region,
         new_npc_arr[m].pos_i = ti;
         new_npc_arr[m].pos_j = tj;
         new_npc_arr[m].tnr = tt;
+        if (tt == tnr_pacer || tnr_wanderer) {
+          new_npc_arr[m].dir = rand() % 8;
+        }
         spawn_attempts = 0;
       } else {
         --spawn_attempts;
@@ -948,36 +976,180 @@ void init_trainer_pq(heap_t *queue, character_t *pc, region_t *region) {
 }
 
 /*
+ * Performs the all the nessesary checks to ensure a location is a valid spot to move to.
+ * Returns 1 if the location is valid, 0 otherwise.
+ */
+int is_valid_location(int32_t to_i, int32_t to_j, 
+                      trainer_t tnr, region_t *region, character_t *pc) {
+  if (travel_times[region->tile_arr[to_i][to_j].ter][tnr] == INT_MAX) {
+    return 0;
+  }
+  if (pc->pos_i == to_i
+   && pc->pos_j == to_j) {
+    return 0;
+  }
+  for (int32_t k = 0; k < region->num_npc; ++k) {
+    if (region->npc_arr[k].pos_i == to_i
+     && region->npc_arr[k].pos_j == to_j) {
+        return 0;
+      }
+  }
+  if (tnr != tnr_pc && ( 
+     to_i <= 0 || to_i >= MAX_ROW - 1 ||
+     to_j <= 0 || to_j >= MAX_COL - 1) ) {
+    return 0;
+  }
+  return 1;
+}
+
+/*
+ * Performs the all the nessesary checks to ensure a location is a valid spot to move to.
+ * Returns 1 if the location is valid, 0 otherwise.
+ */
+int is_valid_gradient(int32_t to_i, int32_t to_j, 
+                      region_t *region, int32_t dist_map[MAX_ROW][MAX_COL], character_t *pc) {
+  if (dist_map[to_i][to_j] == INT_MAX) {
+    return 0;
+  }
+  if (pc->pos_i == to_i
+   && pc->pos_j == to_j) {
+    return 0;
+  }
+  for (int32_t k = 0; k < region->num_npc; ++k) {
+    if (region->npc_arr[k].pos_i == to_i
+     && region->npc_arr[k].pos_j == to_j) {
+        return 0;
+    }
+  }
+  return 1;
+}
+
+/*
+ * Move a trainer along the maximum gradient
+ */
+void move_along_gradient(character_t *c, region_t *region, int32_t dist_map[MAX_ROW][MAX_COL], character_t *pc) {
+  int32_t next_i = 0;
+  int32_t next_j = 0;
+  int32_t max_gradient = INT_MAX;
+
+  // North
+  if (is_valid_gradient(c->pos_i - 1, c->pos_j    , region, dist_map, pc)
+            && dist_map[c->pos_i - 1][c->pos_j    ] < max_gradient) {
+    max_gradient = dist_map[c->pos_i - 1][c->pos_j    ];
+    next_i = -1;
+    next_j = 0;
+  }
+  // East
+  if (is_valid_gradient(c->pos_i    , c->pos_j + 1, region, dist_map, pc)
+            && dist_map[c->pos_i    ][c->pos_j + 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i    ][c->pos_j + 1];
+    next_i = 0;
+    next_j = 1;
+  }
+  // South
+  if (is_valid_gradient(c->pos_i + 1, c->pos_j    , region, dist_map, pc)
+            && dist_map[c->pos_i + 1][c->pos_j    ] < max_gradient) {
+    max_gradient = dist_map[c->pos_i + 1][c->pos_j    ];
+    next_i = 1;
+    next_j = 0;
+  }
+  // West
+  if (is_valid_gradient(c->pos_i    , c->pos_j - 1, region, dist_map, pc)
+            && dist_map[c->pos_i    ][c->pos_j - 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i    ][c->pos_j - 1];
+    next_i = 0;
+    next_j = -1;
+  }
+  // North East
+  if (is_valid_gradient(c->pos_i - 1, c->pos_j + 1, region, dist_map, pc)
+            && dist_map[c->pos_i - 1][c->pos_j + 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i - 1][c->pos_j + 1];
+    next_i = -1;
+    next_j = 1;
+  }
+  // South East
+  if (is_valid_gradient(c->pos_i + 1, c->pos_j + 1, region, dist_map, pc)
+            && dist_map[c->pos_i + 1][c->pos_j + 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i + 1][c->pos_j + 1];
+    next_i = 1;
+    next_j = 1;
+  }
+  // South West
+  if (is_valid_gradient(c->pos_i + 1, c->pos_j - 1, region, dist_map, pc)
+            && dist_map[c->pos_i + 1][c->pos_j - 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i + 1][c->pos_j - 1];
+    next_i = 1;
+    next_j = -1;
+  }
+  // North West
+  if (is_valid_gradient(c->pos_i - 1, c->pos_j - 1, region, dist_map, pc)
+            && dist_map[c->pos_i - 1][c->pos_j - 1] < max_gradient) {
+    max_gradient = dist_map[c->pos_i - 1][c->pos_j - 1];
+    next_i = -1;
+    next_j = -1;
+  }
+
+  c->pos_i += next_i;
+  c->pos_j += next_j;
+  return;
+}
+
+/*
  * Process a trainer's movement
  */
-void move_trainer(character_t *c, region_t *region) {
+void move_trainer(character_t *c, region_t *region, character_t *pc) {
   switch (c->tnr)
   {
   case tnr_pc:
-    //init_pc(c, region);
+    for (int32_t k = 0; k < region->num_npc; ++k) {
+      if (region->npc_arr[k].pos_i <= pc->pos_i + 1
+      && region->npc_arr[k].pos_i >= pc->pos_i - 1
+      && region->npc_arr[k].pos_j <= pc->pos_j + 1
+      && region->npc_arr[k].pos_j >= pc->pos_j - 1) {
+          init_pc(c, region);
+      }
+    }
     break;
   case tnr_hiker:
-    printf("Move tnr_hiker\n");
-    c->movetime = 100;
+    move_along_gradient(c, region, dist_map_hiker, pc);
     break;
   case tnr_rival:
-    printf("Move tnr_rival\n");
-    c->movetime = 100;
+    move_along_gradient(c, region, dist_map_rival, pc);
     break;
   case tnr_pacer:
-    printf("Move tnr_pacer\n");
-    c->movetime = 100;
+    if (is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
+                          c->pos_j + dir_offsets[c->dir][1], 
+                          c->tnr, region, pc)) {
+      c->pos_i += dir_offsets[c->dir][0];
+      c->pos_j += dir_offsets[c->dir][1];
+    } else {
+      c->dir = (c->dir + 4) % 8;
+    }
     break;
   case tnr_wanderer:
-    printf("Move tnr_wanderer\n");
-    c->movetime = 100;
+    if ((region->tile_arr[ c->pos_i + dir_offsets[c->dir][0] ][ c->pos_j + dir_offsets[c->dir][1] ].ter
+      == region->tile_arr[ c->pos_i                          ][ c->pos_j                          ].ter)
+     && is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
+                          c->pos_j + dir_offsets[c->dir][1], 
+                          c->tnr, region, pc)) {
+      c->pos_i += dir_offsets[c->dir][0];
+      c->pos_j += dir_offsets[c->dir][1];
+    } else {
+      c->dir = rand() % 8;
+    }
     break;
   case tnr_stationary:
     // Do nothing
     break;
   case tnr_rand_walker:
-    printf("Move tnr_rand_walker\n");
-    c->movetime = 100;
+    if (is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
+                          c->pos_j + dir_offsets[c->dir][1], 
+                          c->tnr, region, pc)) {
+      c->pos_i += dir_offsets[c->dir][0];
+      c->pos_j += dir_offsets[c->dir][1];
+    } else {
+      c->dir = rand() % 8;
+    }
     break;
   default:
     printf("Error: Movement for trainer type %d has not been implemented!\n",c->tnr);
@@ -1017,7 +1189,6 @@ int main (int argc, char *argv[])
   struct timeval t;
   gettimeofday(&t, NULL);
   seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
-  srand(seed);
 
   // handle command line inputs
   if (argc != 1 && argc != 3) {
@@ -1026,13 +1197,14 @@ int main (int argc, char *argv[])
   if (argc == 3) {
     if (!strcmp(argv[1], "--numtrainers")) {
       numtrainers_opt = atoi(argv[2]);
-    } else if (!strcmp(argv[1], "--numtrainers")) {
+    } else if (!strcmp(argv[1], "--seed")) {
       seed = atoi(argv[2]);
     } else {
       usage(argv[0]);
       return -1;
     }
   }
+  srand(seed);
 
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
@@ -1083,7 +1255,7 @@ int main (int argc, char *argv[])
         step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
         while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
           c = heap_remove_min(&move_queue);
-          move_trainer(c, region_ptr[loaded_region_x][loaded_region_y]);
+          move_trainer(c, region_ptr[loaded_region_x][loaded_region_y], &pc);
           c->hn = heap_insert(&move_queue, c);
         }
       } else {
@@ -1099,7 +1271,7 @@ int main (int argc, char *argv[])
   }
 
   // debug
-  while (c = heap_remove_min(&move_queue)) {
+  while ((c = heap_remove_min(&move_queue))) {
     printf("%d  %d\n", c->tnr, c->movetime);
   }
 
