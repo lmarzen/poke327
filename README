@@ -1,11 +1,20 @@
 Files
 ---
-main.c
-heap.h
-heap.c
-Makefile
 CHANGELOG
+config.h
+global_events.c
+global_events.h
+heap.c
+heap.h
+main.c
+Makefile
+pathfinding.c
+pathfinding.h
 README
+region.c
+region.h
+trainer_events.c
+trainer_events.h
 
 Description
 ---

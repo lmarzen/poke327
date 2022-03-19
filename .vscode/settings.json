@@ -2,6 +2,16 @@
     "files.associations": {
         "*.tcc": "c",
         "string.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "time.h": "c",
+        "region.h": "c",
+        "heap.h": "c",
+        "stdlib.h": "c",
+        "limits.h": "c",
+        "unistd.h": "c",
+        "stdint.h": "c",
+        "global_events.h": "c",
+        "config.h": "c",
+        "trainer_events.h": "c"
     }
 }

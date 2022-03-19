@@ -16,3 +16,4 @@
              Added --numtrainers and --seed switches.
 03/02/2022 - Added priority queue to determine npc's and player movements should be processed.
              Implemented npc movement.
+03/18/2022 - Refractored project into multiple files
