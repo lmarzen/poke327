@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <ncurses.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,8 @@
 #include "heap.h"
 #include "region.h"
 #include "pathfinding.h"
-#include "trainer_events.h"
 #include "global_events.h"
+#include "trainer_events.h"
 
 // Global variables
 // 2D array of pointers, each pointer points to one of the regions the world
@@ -56,6 +57,8 @@ int main (int argc, char *argv[])
   }
   srand(seed);
 
+  init_terminal();
+
   // start in center of the world. 
   // The center of the world may also be referred to as (0,0)
   character_t pc;
@@ -71,11 +74,12 @@ int main (int argc, char *argv[])
   init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
   recalculate_dist_maps(region_ptr[loaded_region_x][loaded_region_y], pc.pos_i, pc.pos_j);
 
-  print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+  render_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+  //refresh();
 
   // Run game
-  uint32_t running = 1;
-  while(running) { 
+  int32_t quit_game = 0;
+  while(!quit_game) { 
     // LEGACY MOVE REGION CODE
     // if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
     //   load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
@@ -103,7 +107,8 @@ int main (int argc, char *argv[])
         step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
         while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
           c = heap_remove_min(&move_queue);
-          move_trainer(c, region_ptr[loaded_region_x][loaded_region_y], &pc);
+          process_movement_turn(c, &loaded_region_x, &loaded_region_y, &pc, &quit_game);
+          // process_turn(c, region_ptr[loaded_region_x][loaded_region_y], &pc);
           c->hn = heap_insert(&move_queue, c);
         }
       } else {
@@ -113,19 +118,14 @@ int main (int argc, char *argv[])
       ticks_since_last_frame += step;
     }
     usleep(FRAMETIME);
-    print_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
-
-    //process_input(&loaded_region_x, &loaded_region_y, &running); 
+    render_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+    //refresh();
+    //process_input(&loaded_region_x, &loaded_region_y, &quit_game); 
   }
-
-  // debug
-  while ((c = heap_remove_min(&move_queue))) {
-    printf("%d  %d\n", c->tnr, c->movetime);
-  }
-
 
   heap_delete(&move_queue);
   free_all_regions();
+  endwin();
 
   return 0;
 }

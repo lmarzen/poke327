@@ -30,6 +30,8 @@ int32_t rand_outcome(double probability) {
 
 /*
  * Print a region
+ * LEGACY CODE
+ * See buffer_region() in global_events.c
  */
 void print_region (region_t *region, character_t *pc) {
   char char_arr[MAX_ROW][MAX_COL];
@@ -480,6 +482,7 @@ void init_region (region_t *region,
         new_npc_arr[m].pos_i = ti;
         new_npc_arr[m].pos_j = tj;
         new_npc_arr[m].tnr = tt;
+        new_npc_arr[m].defeated = 0;
         if (tt == tnr_pacer || tnr_wanderer) {
           new_npc_arr[m].dir = rand() % 8;
         }

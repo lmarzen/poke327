@@ -6,18 +6,6 @@
 #include "config.h"
 #include "heap.h"
 
-static const int32_t dir_offsets[8][2] = {
-            /* { i, j} */
-  /* dir_n  */ {-1, 0},
-  /* dir_ne */ {-1, 1},
-  /* dir_e  */ { 0, 1},
-  /* dir_se */ { 1, 1},
-  /* dir_s  */ { 1, 0},
-  /* dir_sw */ { 1,-1},
-  /* dir_w  */ { 0,-1},
-  /* dir_nw */ {-1,-1}
-};
-
 typedef enum terrain {
   ter_border,
   ter_boulder,
@@ -53,6 +41,18 @@ typedef enum direction {
   dir_nw
 } direction_t;
 
+static const int32_t dir_offsets[8][2] = {
+            /* { i, j} */
+  /* dir_n  */ {-1, 0},
+  /* dir_ne */ {-1, 1},
+  /* dir_e  */ { 0, 1},
+  /* dir_se */ { 1, 1},
+  /* dir_s  */ { 1, 0},
+  /* dir_sw */ { 1,-1},
+  /* dir_w  */ { 0,-1},
+  /* dir_nw */ {-1,-1}
+};
+
 typedef struct tile {
   terrain_t ter;
 } tile_t;
@@ -72,7 +72,7 @@ typedef struct character {
   heap_node_t *hn;
   int32_t movetime;
   direction_t dir;
-
+  int32_t defeated;
 } character_t;
 
 typedef struct region {

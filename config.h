@@ -2,6 +2,27 @@
 #define CONFIG_H
 
 #include <limits.h>
+#include <ncurses.h>
+
+// Controls
+#define CTRL_N     key == 'k' || key == '8'
+#define CTRL_NE    key == 'u' || key == '9'
+#define CTRL_E     key == 'l' || key == '6'
+#define CTRL_SE    key == 'n' || key == '3'
+#define CTRL_S     key == 'j' || key == '2'
+#define CTRL_SW    key == 'b' || key == '1'
+#define CTRL_W     key == 'h' || key == '4'
+#define CTRL_NW    key == 'y' || key == '7'
+#define CTRL_PASS  key == ' ' || key == '5' || key == '.'
+#define CTRL_ENTER          key == '>'
+#define CTRL_EXIT           key == '<'
+#define CTRL_TNR_LIST_SHOW  key == 't'
+#define CTRL_TNR_LIST_HIDE  key == KEY_CANCEL
+#define CTRL_SCROLL_UP      key == KEY_UP
+#define CTRL_SCROLL_DOWN    key == KEY_DOWN
+#define CTRL_SCROLL_LEFT    key == KEY_LEFT
+#define CTRL_SCROLL_RIGHT   key == KEY_RIGHT
+#define CTRL_QUIT_GAME      key == 'Q'
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
@@ -19,24 +40,46 @@
 #define MIN_SEEDS_PER_REGION 6 // The first 2 will be grass the next 2 will be clearings after that it is randomized.
 #define MAX_SEEDS_PER_REGION 12
 
-#define CHAR_BORDER       '%';
-#define CHAR_BOULDER      '%';
-#define CHAR_TREE         '^';
-#define CHAR_CENTER       'C';
-#define CHAR_MART         'M';
-#define CHAR_PATH         '#';
-#define CHAR_GRASS        ':';
-#define CHAR_CLEARING     '.';
-#define CHAR_MOUNTAIN     '%';
-#define CHAR_FOREST       '^';
-#define CHAR_PC           '@';
-#define CHAR_HIKER        'h';
-#define CHAR_RIVAL        'r';
-#define CHAR_PACER        'p';
-#define CHAR_WANDERER     'w';
-#define CHAR_STATIONARY   's';
-#define CHAR_RAND_WALKER  'n';
-#define CHAR_UNDEFINED    'U';
+// Symbols
+#define CHAR_BORDER       '%'
+#define CHAR_BOULDER      '%'
+#define CHAR_TREE         '^'
+#define CHAR_CENTER       'C'
+#define CHAR_MART         'M'
+#define CHAR_PATH         '#'
+#define CHAR_GRASS        ':'
+#define CHAR_CLEARING     '.'
+#define CHAR_MOUNTAIN     '%'
+#define CHAR_FOREST       '^'
+#define CHAR_PC           '@'
+#define CHAR_HIKER        'h'
+#define CHAR_RIVAL        'r'
+#define CHAR_PACER        'p'
+#define CHAR_WANDERER     'w'
+#define CHAR_STATIONARY   's'
+#define CHAR_RAND_WALKER  'n'
+#define CHAR_UNDEFINED    'U'
+
+// Colors
+#define CHAR_COLOR_BORDER       COLOR_WHITE
+#define CHAR_COLOR_BOULDER      COLOR_WHITE
+#define CHAR_COLOR_TREE         COLOR_GREEN 
+#define CHAR_COLOR_CENTER       COLOR_RED
+#define CHAR_COLOR_MART         COLOR_BLUE
+#define CHAR_COLOR_PATH         COLOR_YELLOW
+#define CHAR_COLOR_GRASS        COLOR_GREEN
+#define CHAR_COLOR_CLEARING     COLOR_GREEN
+#define CHAR_COLOR_MOUNTAIN     COLOR_WHITE
+#define CHAR_COLOR_FOREST       COLOR_GREEN
+#define CHAR_COLOR_PC           COLOR_RED
+#define CHAR_COLOR_HIKER        COLOR_YELLOW 
+#define CHAR_COLOR_RIVAL        COLOR_RED
+#define CHAR_COLOR_PACER        COLOR_CYAN
+#define CHAR_COLOR_WANDERER     COLOR_MAGENTA
+#define CHAR_COLOR_STATIONARY   COLOR_CYAN
+#define CHAR_COLOR_RAND_WALKER  COLOR_MAGENTA
+#define CHAR_COLOR_UNDEFINED    COLOR_RED
+#define CHAR_COLOR_BACKGROUND   COLOR_BLACK
 
 // The number of trainers that will populate each region
 #define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers

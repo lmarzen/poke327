@@ -1,5 +1,5 @@
 TARGET = poke
-LIBS = -lm
+LIBS = -lm -lncurses
 CC = gcc
 CFLAGS = -Wall -ggdb -O2
 

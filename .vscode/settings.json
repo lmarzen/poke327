@@ -12,6 +12,7 @@
         "stdint.h": "c",
         "global_events.h": "c",
         "config.h": "c",
-        "trainer_events.h": "c"
+        "trainer_events.h": "c",
+        "ncurses.h": "c"
     }
 }
