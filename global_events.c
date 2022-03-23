@@ -584,6 +584,9 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
     } else if (CTRL_TNR_LIST_SHOW) {
       tnr_overlay_driver(pc, region_ptr[*region_x][*region_y], quit_game);
       render_region(region_ptr[*region_x][*region_y], pc);
+      if (*quit_game == 1) {
+        no_op = 0;
+      }
     } else if (CTRL_QUIT_GAME) {
       *quit_game = 1;
       no_op = 0;
