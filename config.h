@@ -14,20 +14,19 @@
 #define CTRL_W     key == 'h' || key == '4'
 #define CTRL_NW    key == 'y' || key == '7'
 #define CTRL_PASS  key == ' ' || key == '5' || key == '.'
-#define CTRL_ENTER          key == '>'
-#define CTRL_EXIT           key == '<'
+#define CTRL_ENTER_BLDG     key == '>'
+#define CTRL_EXIT_BLDG      key == '<'
 #define CTRL_TNR_LIST_SHOW  key == 't'
-#define CTRL_TNR_LIST_HIDE  key == KEY_CANCEL
+#define CTRL_TNR_LIST_HIDE  key == 27 // ESC
 #define CTRL_SCROLL_UP      key == KEY_UP
 #define CTRL_SCROLL_DOWN    key == KEY_DOWN
-#define CTRL_SCROLL_LEFT    key == KEY_LEFT
-#define CTRL_SCROLL_RIGHT   key == KEY_RIGHT
 #define CTRL_QUIT_GAME      key == 'Q'
+#define CTRL_LEAVE_BATTLE   key == 27 // ESC
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
 
-#define FRAMETIME 250000 // in microseconds
+#define FRAMETIME 125000 // in microseconds
 #define TICKS_PER_SEC 10
 #define FRAMES_PER_SEC (1000000/FRAMETIME)
 #define TICKS_PER_FRAME (TICKS_PER_SEC/FRAMES_PER_SEC)

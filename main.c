@@ -108,9 +108,12 @@ int main (int argc, char *argv[])
         while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
           c = heap_remove_min(&move_queue);
           process_movement_turn(c, &loaded_region_x, &loaded_region_y, &pc, &quit_game);
-          // process_turn(c, region_ptr[loaded_region_x][loaded_region_y], &pc);
+          if (quit_game)
+            break;
           c->hn = heap_insert(&move_queue, c);
         }
+        if (quit_game)
+          break;
       } else {
         step = TICKS_PER_FRAME;
       }

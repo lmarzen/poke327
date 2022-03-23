@@ -11,93 +11,6 @@
 
 extern region_t *region_ptr[WORLD_SIZE][WORLD_SIZE];
 
-/*
- * Process user input
- * Update which region is being displayed, generate new regions as needed.
- */
-void process_input (character_t *pc, int32_t *region_x, int32_t *region_y, int32_t *quit) {
-  uint32_t dead = 0;
-  uint32_t no_op = 0;
-  int32_t key = 0;
-
-
-  key = getch();
-  flushinp();
-  if (CTRL_N) {
-    process_pc_move_attempt(pc, dir_n, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_NE) {
-    process_pc_move_attempt(pc, dir_ne, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_E) {
-    process_pc_move_attempt(pc, dir_e, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_SE) {
-    process_pc_move_attempt(pc, dir_se, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_S) {
-    process_pc_move_attempt(pc, dir_s, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_SW) {
-    process_pc_move_attempt(pc, dir_sw, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_W) {
-    process_pc_move_attempt(pc, dir_w, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_NW) {
-    process_pc_move_attempt(pc, dir_nw, region_ptr[*region_x][*region_y]);
-  } else if (CTRL_PASS) {
-    // do nothing
-  } else if (CTRL_ENTER) {
-    
-  } else if (CTRL_EXIT) {
-    
-  } else if (CTRL_TNR_LIST_SHOW) {
-    
-  } else if (CTRL_TNR_LIST_HIDE) {
-      
-  } else if (CTRL_SCROLL_UP) {
-    
-  } else if (CTRL_SCROLL_DOWN) {
-
-  } else if (CTRL_SCROLL_LEFT) {
-    
-  } else if (CTRL_SCROLL_RIGHT) {
-    
-  } else if (CTRL_QUIT_GAME) {
-    *quit = 1;
-  }
-    
-
-  
-  return;
-}
-
-
-/*
-    case 'n':
-      if ((*region_y) < WORLD_SIZE - 1) {
-        ++(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'e':
-      if ((*region_x) < WORLD_SIZE - 1) {
-        ++(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 's':
-      if ((*region_y) > 0) {
-        --(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'w':
-      if ((*region_x) > 0) {
-        --(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-*/
-
 void init_pc (character_t *pc, region_t *region) {
   pc->movetime = 0;
   pc->tnr = tnr_pc;
@@ -341,9 +254,231 @@ void render_region(region_t *region, character_t *pc) {
     }
   }
   
+  attron(A_BOLD);
   attron(COLOR_PAIR(CHAR_COLOR_PC));
   mvaddch(pc->pos_i + 1, pc->pos_j, CHAR_PC);
   attroff(COLOR_PAIR(CHAR_COLOR_PC));
+  attroff(A_BOLD);
 
   refresh();
 }
+
+/*
+ * Renders a battle to the screen
+ */
+void render_battle(battle_t *battle) { 
+    clear(); 
+    mvprintw(0,0,"***Battle placeholder***");
+    mvprintw(2,0,"Press ESC to exit battle");
+    refresh();
+    return;
+}
+
+/*
+ * Renders a poke center to the screen
+ */
+void render_center() { 
+    clear(); 
+    mvprintw(0,0,"***Poke Center placeholder***");
+    mvprintw(2,0,"Press < to exit the Poke Center");
+    refresh();
+    return;
+}
+
+/*
+ * Renders a poke mart to the screen
+ */
+void render_mart() { 
+    clear(); 
+    mvprintw(0,0,"***Poke Mart placeholder***");
+    mvprintw(2,0,"Press < to exit the Poke Mart");
+    refresh();
+    return;
+}
+
+/*
+ * Process user input while in a battle.
+ */
+void process_input_battle (battle_t *battle, int32_t *quit_game) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_LEAVE_BATTLE) {
+      battle->end_battle = 1;
+      no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      *quit_game = 1;
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in a center.
+ */
+void process_input_center (character_t *pc, int32_t *exit_center, int32_t *quit_game) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_EXIT_BLDG) {
+      *exit_center = 1;
+      no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      *quit_game = 1;
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in a mart.
+ */
+void process_input_mart (character_t *pc, int32_t *exit_mart, int32_t *quit_game) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_EXIT_BLDG) {
+      *exit_mart = 1;
+      no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      *quit_game = 1;
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Drives interactions in a poke center
+ */
+void center_driver(character_t *pc, int32_t *quit_game) {
+  int32_t exit_center = 0;
+
+  while (!exit_center && !(*quit_game)) {
+    render_center();
+    process_input_center(pc, &exit_center, quit_game);
+  }
+}
+
+/*
+ * Drives interactions in a poke mart
+ */
+void mart_driver(character_t *pc, int32_t *quit_game) {
+  int32_t exit_mart = 0;
+
+  while (!exit_mart && !(*quit_game)) {
+    render_mart();
+    process_input_mart(pc, &exit_mart, quit_game);
+  }
+
+  return;
+}
+
+/*
+ * Process user input while navigating a region.
+ * Update which region is being displayed, generate new regions as needed.
+ */
+void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, int32_t *quit_game) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_N) {
+      process_pc_move_attempt(pc, dir_n, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_NE) {
+      process_pc_move_attempt(pc, dir_ne, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_E) {
+      process_pc_move_attempt(pc, dir_e, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_SE) {
+      process_pc_move_attempt(pc, dir_se, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_S) {
+      process_pc_move_attempt(pc, dir_s, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_SW) {
+      process_pc_move_attempt(pc, dir_sw, region_ptr[*region_x][*region_y], quit_game);
+    } else if (CTRL_W) {
+      no_op = 0;
+      process_pc_move_attempt(pc, dir_w, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_NW) {
+      process_pc_move_attempt(pc, dir_nw, region_ptr[*region_x][*region_y], quit_game);
+      no_op = 0;
+    } else if (CTRL_PASS) {
+      // do nothing
+      no_op = 0;
+    } else if (CTRL_ENTER_BLDG) {
+      if (region_ptr[*region_x][*region_y]->tile_arr[pc->pos_i][pc->pos_j].ter == ter_center) {
+        center_driver(pc, quit_game);
+        no_op = 0;
+      } else if (region_ptr[*region_x][*region_y]->tile_arr[pc->pos_i][pc->pos_j].ter == ter_mart) {
+        mart_driver(pc, quit_game);
+        no_op = 0;
+      }
+    } else if (CTRL_TNR_LIST_SHOW) {
+      
+      no_op = 0;
+    } else if (CTRL_TNR_LIST_HIDE) {
+        
+      no_op = 0;
+    } else if (CTRL_SCROLL_UP) {
+      
+      no_op = 0;
+    } else if (CTRL_SCROLL_DOWN) {
+      
+      no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      *quit_game = 1;
+      no_op = 0;
+    }
+  }
+    
+  return;
+}
+
+/*
+    case 'n':
+      if ((*region_y) < WORLD_SIZE - 1) {
+        ++(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'e':
+      if ((*region_x) < WORLD_SIZE - 1) {
+        ++(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 's':
+      if ((*region_y) > 0) {
+        --(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'w':
+      if ((*region_x) > 0) {
+        --(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+*/

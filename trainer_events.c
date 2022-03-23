@@ -29,11 +29,20 @@ void init_trainer_pq(heap_t *queue, character_t *pc, region_t *region) {
 }
 
 /*
- * Initiate a battle
+ * Initiates and drives a battle
  */
-void init_battle(character_t *c, character_t *pc) {
-  // TODO
-  c->defeated = 1;
+void battle_driver(character_t *opp, character_t *pc, int32_t *quit_game) {
+  battle_t battle;
+  battle.opp = opp;
+  battle.pc = pc;
+  battle.end_battle = 0;
+
+  while (!battle.end_battle && !(*quit_game)) {
+    render_battle(&battle);
+    process_input_battle(&battle, quit_game);
+  }
+
+  opp->defeated = 1;
   return;
 }
 
@@ -41,12 +50,12 @@ void init_battle(character_t *c, character_t *pc) {
  * Checks if a player is initiating a battle and starts battle if nessesary
  * Returns 1 if battle occured
  */
-int32_t check_battle(character_t *pc, int32_t to_i, int32_t to_j, region_t *region) {
+int32_t check_battle(character_t *pc, int32_t to_i, int32_t to_j, region_t *region, int32_t *quit_game) {
   for (int32_t k = 0; k < region->num_npc; ++k) {
     if (region->npc_arr[k].pos_i == to_i
      && region->npc_arr[k].pos_j == to_j
      && !(region->npc_arr[k].defeated)) {
-      init_battle(&region->npc_arr[k], pc);
+      battle_driver(&region->npc_arr[k], pc, quit_game);
       return 1;
     }
   }
@@ -81,17 +90,14 @@ int32_t is_valid_location(int32_t to_i, int32_t to_j,
 }
 
 /*
- * Performs the all the nessesary checks to ensure a location is a valid spot to move to.
- * Returns 1 if the location is valid, 0 otherwise.
+ * Performs the all the nessesary checks to ensure a location is a valid spot to move to
+ * except if the player is in that location.
+ * Returns 1 if the location is valid or player exists there, 0 otherwise.
  */
 int is_valid_gradient(int32_t to_i, int32_t to_j, 
                       region_t *region, int32_t dist_map[MAX_ROW][MAX_COL],
                       character_t *pc) {
   if (dist_map[to_i][to_j] == INT_MAX) {
-    return 0;
-  }
-  if (pc->pos_i == to_i
-   && pc->pos_j == to_j) {
     return 0;
   }
   for (int32_t k = 0; k < region->num_npc; ++k) {
@@ -106,17 +112,12 @@ int is_valid_gradient(int32_t to_i, int32_t to_j,
 /*
  * Move a trainer along the maximum gradient
  */
-void move_along_gradient(character_t *c, region_t *region, int32_t dist_map[MAX_ROW][MAX_COL], character_t *pc) {
+void move_along_gradient(character_t *c, region_t *region, 
+                         int32_t dist_map[MAX_ROW][MAX_COL], 
+                         character_t *pc, int32_t *quit_game) {
   int32_t next_i = 0;
   int32_t next_j = 0;
   int32_t max_gradient = INT_MAX;
-
-  // Check if initiating a battle
-  if (pc->pos_i == (c->pos_i + next_i)
-   && pc->pos_j == (c->pos_j + next_j)) {
-    init_battle(c, pc);
-    return;
-  }
 
   // North
   if (is_valid_gradient(c->pos_i - 1, c->pos_j    , region, dist_map, pc)
@@ -175,6 +176,13 @@ void move_along_gradient(character_t *c, region_t *region, int32_t dist_map[MAX_
     next_j = -1;
   }
 
+  // Check if initiating a battle
+  if (pc->pos_i == (c->pos_i + next_i)
+   && pc->pos_j == (c->pos_j + next_j)) {
+    battle_driver(c, pc, quit_game);
+    return;
+  }
+
   c->pos_i += next_i;
   c->pos_j += next_j;
   return;
@@ -185,11 +193,11 @@ void move_along_gradient(character_t *c, region_t *region, int32_t dist_map[MAX_
  */
 void process_movement_turn(character_t *c, 
                            int32_t *region_x, int32_t *region_y, 
-                           character_t *pc, int32_t *quit) {
+                           character_t *pc, int32_t *quit_game) {
   switch (c->tnr)
   {
   case tnr_pc:
-    process_input(pc, region_x, region_y, quit);
+    process_input_nav(pc, region_x, region_y, quit_game);
     // for (int32_t k = 0; k < region->num_npc; ++k) {
     //   if (region->npc_arr[k].pos_i <= pc->pos_i + 1
     //   && region->npc_arr[k].pos_i >= pc->pos_i - 1
@@ -200,21 +208,21 @@ void process_movement_turn(character_t *c,
     // }
     break;
   case tnr_hiker:
-    if (c->defeated)
-      // do nothing
-    move_along_gradient(c, region_ptr[*region_x][*region_y], dist_map_hiker, pc);
+    if (!c->defeated) {
+      move_along_gradient(c, region_ptr[*region_x][*region_y], dist_map_hiker, pc, quit_game);
+    }
     break;
   case tnr_rival:
-    if (c->defeated)
-      // do nothing
-    move_along_gradient(c, region_ptr[*region_x][*region_y], dist_map_rival, pc);
+    if (!c->defeated) {
+      move_along_gradient(c, region_ptr[*region_x][*region_y], dist_map_rival, pc, quit_game);
+    }
     break;
   case tnr_pacer:
     if (c->defeated) {
       // do nothing
     } else if (pc->pos_i == (c->pos_i + dir_offsets[c->dir][0])
             && pc->pos_j == (c->pos_j + dir_offsets[c->dir][1])) {
-      init_battle(c, pc);
+      battle_driver(c, pc, quit_game);
     } else if (is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
                           c->pos_j + dir_offsets[c->dir][1], 
                           c->tnr, region_ptr[*region_x][*region_y], pc)) {
@@ -229,7 +237,7 @@ void process_movement_turn(character_t *c,
       // do nothing
      } else if (pc->pos_i == (c->pos_i + dir_offsets[c->dir][0])
              && pc->pos_j == (c->pos_j + dir_offsets[c->dir][1])) {
-      init_battle(c, pc);
+      battle_driver(c, pc, quit_game);
     } else if ((region_ptr[*region_x][*region_y]->tile_arr[ c->pos_i + dir_offsets[c->dir][0] ][ c->pos_j + dir_offsets[c->dir][1] ].ter
              == region_ptr[*region_x][*region_y]->tile_arr[ c->pos_i                          ][ c->pos_j                          ].ter)
      && is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
@@ -249,7 +257,7 @@ void process_movement_turn(character_t *c,
       break;
     } else if (pc->pos_i == (c->pos_i + dir_offsets[c->dir][0])
             && pc->pos_j == (c->pos_j + dir_offsets[c->dir][1])) {
-      init_battle(c, pc);
+      battle_driver(c, pc, quit_game);
     } else if (is_valid_location(c->pos_i + dir_offsets[c->dir][0], 
                                  c->pos_j + dir_offsets[c->dir][1], 
                                  c->tnr, region_ptr[*region_x][*region_y], pc)) {
@@ -285,10 +293,11 @@ void step_all_movetimes(character_t *pc, region_t *region, int32_t amount) {
 /*
  * Attempt to move player in a given direction
  */
-void process_pc_move_attempt(character_t *pc, direction_t dir, region_t *region) {
+void process_pc_move_attempt(character_t *pc, direction_t dir,
+                             region_t *region, int32_t *quit_game) {
   if (check_battle(pc, pc->pos_i + dir_offsets[dir][0], 
                        pc->pos_j + dir_offsets[dir][1], 
-                       region)) {
+                       region, quit_game)) {
     return;
   }
   if (is_valid_location(pc->pos_i + dir_offsets[dir][0], 
