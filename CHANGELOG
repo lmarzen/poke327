@@ -17,5 +17,7 @@
 03/02/2022 - Added priority queue to determine npc's and player movements should be processed.
              Implemented npc movement.
 03/18/2022 - Refractored project into multiple files.
-03/19/2022 - Added ncurses and controls.
+03/21/2022 - Added ncurses and controls.
              Defeated trainers will now stop moving.
+03/22/2022 - Added placeholder screens for battles, centers, and marts.
+             Added trainer list overlay.

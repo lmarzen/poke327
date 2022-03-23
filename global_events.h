@@ -13,7 +13,5 @@ void free_all_regions();
 void init_terminal();
 void render_region(region_t *region, character_t *pc);
 void render_battle(battle_t *battle);
-void render_center();
-void render_mart();
 
 #endif

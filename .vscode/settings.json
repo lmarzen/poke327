@@ -13,6 +13,7 @@
         "global_events.h": "c",
         "config.h": "c",
         "trainer_events.h": "c",
-        "ncurses.h": "c"
+        "ncurses.h": "c",
+        "chrono": "c"
     }
 }

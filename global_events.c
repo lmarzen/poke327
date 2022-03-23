@@ -95,6 +95,37 @@ void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
 }
 
 /*
+    case 'n':
+      if ((*region_y) < WORLD_SIZE - 1) {
+        ++(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'e':
+      if ((*region_x) < WORLD_SIZE - 1) {
+        ++(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 's':
+      if ((*region_y) > 0) {
+        --(*region_y);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+    case 'w':
+      if ((*region_x) > 0) {
+        --(*region_x);
+      } else {
+        printf("Illegal input, out of bounds.\n");
+      }
+      break;
+*/
+
+/*
  * Free all memomry allocated to regions
  */
 void free_all_regions() {
@@ -106,20 +137,6 @@ void free_all_regions() {
       }
     }
   }
-}
-
-/*
- * integer bit pattern using a color byte
- */
-int colornum(int fg, int bg)
-{
-    int B, bbb, ffff;
-
-    B = 1 << 7;
-    bbb = (7 & bg) << 4;
-    ffff = 7 & fg;
-
-    return (B | bbb | ffff);
 }
 
 /*
@@ -147,70 +164,61 @@ void init_terminal() {
  * Renders a region to the screen
  */
 void render_region(region_t *region, character_t *pc) { 
+  int32_t color;
+  char ch;
+
   clear(); 
   for (int32_t i = 0; i < MAX_ROW; i++) {
     for (int32_t j = 0; j < MAX_COL; j++) {
       terrain_t ter = region->tile_arr[i][j].ter;
       switch (ter) {
         case ter_border:
-          attron(COLOR_PAIR(CHAR_COLOR_BORDER));
-          mvaddch(i + 1, j, CHAR_BORDER);
-          attroff(COLOR_PAIR(CHAR_COLOR_BORDER));
+          ch =  CHAR_BORDER;
+          color = CHAR_COLOR_BORDER;
           break;
         case ter_clearing:
-          attron(COLOR_PAIR(CHAR_COLOR_CLEARING));
-          mvaddch(i + 1, j, CHAR_CLEARING);
-          attroff(COLOR_PAIR(CHAR_COLOR_CLEARING));
+          ch =  CHAR_CLEARING;
+          color = CHAR_COLOR_CLEARING;
           break;
         case ter_grass:
-          attron(COLOR_PAIR(CHAR_COLOR_GRASS));
-          mvaddch(i + 1, j, CHAR_GRASS);
-          attroff(COLOR_PAIR(CHAR_COLOR_GRASS));
+          ch =  CHAR_GRASS;
+          color = CHAR_COLOR_GRASS;
           break;
         case ter_boulder:
-          attron(COLOR_PAIR(CHAR_COLOR_BOULDER));
-          mvaddch(i + 1, j, CHAR_BOULDER);
-          attroff(COLOR_PAIR(CHAR_COLOR_BOULDER));
+          ch =  CHAR_BOULDER;
+          color = CHAR_COLOR_BOULDER;
           break;
         case ter_tree:
-          attron(COLOR_PAIR(CHAR_COLOR_TREE));
-          mvaddch(i + 1, j, CHAR_TREE);
-          attroff(COLOR_PAIR(CHAR_COLOR_TREE));
+          ch =  CHAR_TREE;
+          color = CHAR_COLOR_TREE;
           break;
         case ter_mountain:
-          attron(COLOR_PAIR(CHAR_COLOR_MOUNTAIN));
-          mvaddch(i + 1, j, CHAR_MOUNTAIN);
-          attroff(COLOR_PAIR(CHAR_COLOR_MOUNTAIN));
+          ch =  CHAR_MOUNTAIN;
+          color = CHAR_COLOR_MOUNTAIN;
           break;
         case ter_forest:
-          attron(COLOR_PAIR(CHAR_COLOR_FOREST));
-          mvaddch(i + 1, j, CHAR_FOREST);
-          attroff(COLOR_PAIR(CHAR_COLOR_FOREST));
+          ch =  CHAR_FOREST;
+          color = CHAR_COLOR_FOREST;
           break;
         case ter_path:
-          attron(COLOR_PAIR(CHAR_COLOR_PATH));
-          mvaddch(i + 1, j, CHAR_PATH);
-          attroff(COLOR_PAIR(CHAR_COLOR_PATH));
+          ch =  CHAR_PATH;
+          color = CHAR_COLOR_PATH;
           break;
         case ter_center:
-          attron(A_BOLD);
-          attron(COLOR_PAIR(CHAR_COLOR_CENTER));
-          mvaddch(i + 1, j, CHAR_CENTER);
-          attroff(A_BOLD);
-          attroff(COLOR_PAIR(CHAR_COLOR_CENTER));
+          ch =  CHAR_CENTER;
+          color = CHAR_COLOR_CENTER;
           break;
         case ter_mart:
-          attron(A_BOLD);
-          attron(COLOR_PAIR(CHAR_COLOR_MART));
-          mvaddch(i + 1, j, CHAR_MART);
-          attroff(A_BOLD);
-          attroff(COLOR_PAIR(CHAR_COLOR_MART));
+          ch =  CHAR_MART;
+          color = CHAR_COLOR_MART;
           break;
         default:
-          attron(COLOR_PAIR(CHAR_COLOR_UNDEFINED));
-          mvaddch(i + 1, j, CHAR_UNDEFINED);
-          attroff(COLOR_PAIR(CHAR_COLOR_UNDEFINED));
+          ch =  CHAR_UNDEFINED;
+          color = CHAR_COLOR_UNDEFINED;
       }
+    attron(COLOR_PAIR(color));
+    mvaddch(i + 1, j, ch);
+    attroff(COLOR_PAIR(color));
     }
   }
 
@@ -218,40 +226,36 @@ void render_region(region_t *region, character_t *pc) {
   for (int32_t k = 0; k < region->num_npc; k++, p++) {
     switch (p->tnr) {
       case tnr_hiker:
-        attron(COLOR_PAIR(CHAR_COLOR_HIKER));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_HIKER);
-        attroff(COLOR_PAIR(CHAR_COLOR_HIKER));
+        ch = CHAR_HIKER;
+        color = CHAR_COLOR_HIKER;
         break;
       case tnr_rival:
-        attron(COLOR_PAIR(CHAR_COLOR_RIVAL));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_RIVAL);
-        attroff(COLOR_PAIR(CHAR_COLOR_RIVAL));
+        ch = CHAR_RIVAL;
+        color = CHAR_COLOR_RIVAL;
         break;
       case tnr_pacer:
-        attron(COLOR_PAIR(CHAR_COLOR_PACER));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_PACER);
-        attroff(COLOR_PAIR(CHAR_COLOR_PACER));
+        ch = CHAR_PACER;
+        color = CHAR_COLOR_PACER;
         break;
       case tnr_wanderer:
-        attron(COLOR_PAIR(CHAR_COLOR_WANDERER));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_WANDERER);
-        attroff(COLOR_PAIR(CHAR_COLOR_WANDERER));
+        ch = CHAR_WANDERER;
+        color = CHAR_COLOR_WANDERER;
         break;
       case tnr_stationary:
-        attron(COLOR_PAIR(CHAR_COLOR_STATIONARY));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_STATIONARY);
-        attroff(COLOR_PAIR(CHAR_COLOR_STATIONARY));
+        ch = CHAR_STATIONARY;
+        color = CHAR_COLOR_STATIONARY;
         break;
       case tnr_rand_walker:
-        attron(COLOR_PAIR(CHAR_COLOR_RAND_WALKER));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_RAND_WALKER);
-        attroff(COLOR_PAIR(CHAR_COLOR_RAND_WALKER));
+        ch = CHAR_RAND_WALKER;
+        color = CHAR_COLOR_RAND_WALKER;
         break;
       default:
-        attron(COLOR_PAIR(CHAR_COLOR_UNDEFINED));
-        mvaddch(p->pos_i + 1, p->pos_j, CHAR_UNDEFINED);
-        attroff(COLOR_PAIR(CHAR_COLOR_UNDEFINED));
+        ch = CHAR_UNDEFINED;
+        color = CHAR_COLOR_UNDEFINED;
     }
+    attron(COLOR_PAIR(color));
+    mvaddch(p->pos_i + 1, p->pos_j, ch);
+    attroff(COLOR_PAIR(color));
   }
   
   attron(A_BOLD);
@@ -267,39 +271,114 @@ void render_region(region_t *region, character_t *pc) {
  * Renders a battle to the screen
  */
 void render_battle(battle_t *battle) { 
-    clear(); 
-    mvprintw(0,0,"***Battle placeholder***");
-    mvprintw(2,0,"Press ESC to exit battle");
-    refresh();
-    return;
+  clear(); 
+  mvprintw(0,0,"***Battle placeholder***");
+  mvprintw(2,0,"Press ESC to exit battle");
+  refresh();
+  return;
 }
 
 /*
  * Renders a poke center to the screen
  */
 void render_center() { 
-    clear(); 
-    mvprintw(0,0,"***Poke Center placeholder***");
-    mvprintw(2,0,"Press < to exit the Poke Center");
-    refresh();
-    return;
+  clear(); 
+  mvprintw(0,0,"***Poke Center placeholder***");
+  mvprintw(2,0,"Press < to exit the Poke Center");
+  refresh();
+  return;
 }
 
 /*
  * Renders a poke mart to the screen
  */
 void render_mart() { 
-    clear(); 
-    mvprintw(0,0,"***Poke Mart placeholder***");
-    mvprintw(2,0,"Press < to exit the Poke Mart");
-    refresh();
-    return;
+  clear(); 
+  mvprintw(0,0,"***Poke Mart placeholder***");
+  mvprintw(2,0,"Press < to exit the Poke Mart");
+  refresh();
+  return;
 }
 
 /*
- * Process user input while in a battle.
+ * Renders the trainer overlay to the screen
  */
-void process_input_battle (battle_t *battle, int32_t *quit_game) {
+void render_tnr_overlay(character_t *pc, region_t *region, int32_t scroller_pos) { 
+  int32_t i;
+  int32_t j = scroller_pos;
+  int32_t color;
+  char ch;
+  int32_t rel_i, rel_j;
+  char dir_ns, dir_ew;
+
+  clear(); 
+  attron(A_BOLD);
+  mvprintw(0,0,"Relative Trainer Locations");
+  attroff(A_BOLD);
+
+  for (i = 0; (i < region->num_npc) && (i < MAX_ROW); i++) {
+    mvaddch(i + 1,0, ACS_VLINE);
+
+    character_t t = region->npc_arr[scroller_pos + i];
+    switch (t.tnr) {
+      case tnr_hiker:
+        ch = CHAR_HIKER;
+        color = CHAR_COLOR_HIKER;
+        break;
+      case tnr_rival:
+        ch = CHAR_RIVAL;
+        color = CHAR_COLOR_RIVAL;
+        break;
+      case tnr_pacer:
+        ch = CHAR_PACER;
+        color = CHAR_COLOR_PACER;
+        break;
+      case tnr_wanderer:
+        ch = CHAR_WANDERER;
+        color = CHAR_COLOR_WANDERER;
+        break;
+      case tnr_stationary:
+        ch = CHAR_STATIONARY;
+        color = CHAR_COLOR_STATIONARY;
+        break;
+      case tnr_rand_walker:
+        ch = CHAR_RAND_WALKER;
+        color = CHAR_COLOR_RAND_WALKER;
+        break;
+      default:
+        ch = CHAR_UNDEFINED;
+        color = CHAR_COLOR_UNDEFINED;
+    }
+    attron(COLOR_PAIR(color));
+    mvaddch(i + 1, 2, ch);
+    attroff(COLOR_PAIR(color));
+
+    rel_i = t.pos_i - pc->pos_i;
+    rel_j = t.pos_j - pc->pos_j;
+    if (rel_i < 0) {
+      dir_ns = 'n';
+      rel_i = abs(rel_i);
+    } else {
+      dir_ns = 's';
+    }
+    if (rel_j < 0) {
+      dir_ew = 'w';
+      rel_j = abs(rel_j);
+    } else {
+      dir_ew = 'e';
+    }
+    mvprintw(i + 1,4,"(%d%c, %d%c)", rel_i, dir_ns, rel_j, dir_ew);
+  }
+  
+  mvprintw(i + 2,0,"Press ESC to close overlay");
+  refresh();
+  return;
+}
+
+/*
+ * Process user input while in a battle
+ */
+void process_input_battle(battle_t *battle, int32_t *quit_game) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
@@ -318,9 +397,9 @@ void process_input_battle (battle_t *battle, int32_t *quit_game) {
 }
 
 /*
- * Process user input while in a center.
+ * Process user input while in a center
  */
-void process_input_center (character_t *pc, int32_t *exit_center, int32_t *quit_game) {
+void process_input_center(character_t *pc, int32_t *exit_center, int32_t *quit_game) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
@@ -339,9 +418,9 @@ void process_input_center (character_t *pc, int32_t *exit_center, int32_t *quit_
 }
 
 /*
- * Process user input while in a mart.
+ * Process user input while in a mart
  */
-void process_input_mart (character_t *pc, int32_t *exit_mart, int32_t *quit_game) {
+void process_input_mart(character_t *pc, int32_t *exit_mart, int32_t *quit_game) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
@@ -351,6 +430,37 @@ void process_input_mart (character_t *pc, int32_t *exit_mart, int32_t *quit_game
     if (CTRL_EXIT_BLDG) {
       *exit_mart = 1;
       no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      *quit_game = 1;
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in the trainer overlay
+ */
+void process_input_tnr_overlay(region_t *region, int32_t *scroller_pos, int32_t *close_overlay, int32_t *quit_game) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_TNR_LIST_HIDE) {
+      *close_overlay = 1;
+      no_op = 0;
+    } else if (CTRL_SCROLL_DOWN) {
+      if (*scroller_pos < (region->num_npc - MAX_ROW)) {
+        ++(*scroller_pos);
+        no_op = 0;
+      }
+    } else if (CTRL_SCROLL_UP) {
+      if (*scroller_pos > 0) {
+        --(*scroller_pos);
+        no_op = 0;
+      }
     } else if (CTRL_QUIT_GAME) {
       *quit_game = 1;
       no_op = 0;
@@ -386,6 +496,21 @@ void mart_driver(character_t *pc, int32_t *quit_game) {
 }
 
 /*
+ * Drives trainer list overlay
+ */
+void tnr_overlay_driver(character_t *pc, region_t *region, int32_t *quit_game) {
+  int32_t close_overlay = 0;
+  int32_t scroller_pos = 0;
+
+  while (!close_overlay && !(*quit_game)) {
+    render_tnr_overlay(pc, region, scroller_pos);
+    process_input_tnr_overlay(region, &scroller_pos, &close_overlay, quit_game);
+  }
+
+  return;
+}
+
+/*
  * Process user input while navigating a region.
  * Update which region is being displayed, generate new regions as needed.
  */
@@ -398,6 +523,7 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
     key = getch();
     if (CTRL_N) {
       process_pc_move_attempt(pc, dir_n, region_ptr[*region_x][*region_y], quit_game);
+      //check_move_regions(pc);
       no_op = 0;
     } else if (CTRL_NE) {
       process_pc_move_attempt(pc, dir_ne, region_ptr[*region_x][*region_y], quit_game);
@@ -432,16 +558,7 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
         no_op = 0;
       }
     } else if (CTRL_TNR_LIST_SHOW) {
-      
-      no_op = 0;
-    } else if (CTRL_TNR_LIST_HIDE) {
-        
-      no_op = 0;
-    } else if (CTRL_SCROLL_UP) {
-      
-      no_op = 0;
-    } else if (CTRL_SCROLL_DOWN) {
-      
+      tnr_overlay_driver(pc, region_ptr[*region_x][*region_y], quit_game);
       no_op = 0;
     } else if (CTRL_QUIT_GAME) {
       *quit_game = 1;
@@ -451,34 +568,3 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
     
   return;
 }
-
-/*
-    case 'n':
-      if ((*region_y) < WORLD_SIZE - 1) {
-        ++(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'e':
-      if ((*region_x) < WORLD_SIZE - 1) {
-        ++(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 's':
-      if ((*region_y) > 0) {
-        --(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'w':
-      if ((*region_x) > 0) {
-        --(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-*/

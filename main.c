@@ -31,8 +31,8 @@ int main (int argc, char *argv[])
   int32_t numtrainers_opt = NUM_TRAINERS;
   int32_t loaded_region_x = WORLD_SIZE/2;
   int32_t loaded_region_y = WORLD_SIZE/2;
-  //int32_t prev_region_x = WORLD_SIZE/2;
-  //int32_t prev_region_y = WORLD_SIZE/2;
+  int32_t prev_region_x = loaded_region_x;
+  int32_t prev_region_y = loaded_region_y;
   int32_t prev_pc_pos_i = -1;
   int32_t prev_pc_pos_j = -1;
   
@@ -80,19 +80,15 @@ int main (int argc, char *argv[])
   // Run game
   int32_t quit_game = 0;
   while(!quit_game) { 
-    // LEGACY MOVE REGION CODE
-    // if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
-    //   load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
-    //   prev_region_x = loaded_region_x;
-    //   prev_region_y = loaded_region_y;
+    if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
+      //load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
+      prev_region_x = loaded_region_x;
+      prev_region_y = loaded_region_y;
 
-    //   init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
-    //   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_hiker, pc.pos_i, pc.pos_j);
-    //   dijkstra(region_ptr[loaded_region_x][loaded_region_y], tnr_rival, pc.pos_i, pc.pos_j);
-    //   print_dist_map(dist_map_hiker);
-    //   print_dist_map(dist_map_rival);
-    //   init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
-    // }
+      init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
+
+      init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
+    }
 
     if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
       recalculate_dist_maps(region_ptr[loaded_region_x][loaded_region_y], pc.pos_i, pc.pos_j);
