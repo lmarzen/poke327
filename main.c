@@ -29,10 +29,10 @@ int main (int argc, char *argv[])
 {
   int32_t seed;
   int32_t numtrainers_opt = NUM_TRAINERS;
-  int32_t loaded_region_x = WORLD_SIZE/2;
-  int32_t loaded_region_y = WORLD_SIZE/2;
-  int32_t prev_region_x = loaded_region_x;
-  int32_t prev_region_y = loaded_region_y;
+  int32_t current_region_x = WORLD_SIZE/2;
+  int32_t current_region_y = WORLD_SIZE/2;
+  int32_t loaded_region_x = current_region_x;
+  int32_t loaded_region_y = current_region_y;
   int32_t prev_pc_pos_i = -1;
   int32_t prev_pc_pos_j = -1;
   
@@ -64,36 +64,35 @@ int main (int argc, char *argv[])
   character_t pc;
   // Allocate memory for and generate the starting region
   region_t *new_region = malloc(sizeof(*new_region));
-  region_ptr[loaded_region_x][loaded_region_y] = new_region;
-  init_region(region_ptr[loaded_region_x][loaded_region_y], -1, -1, -1, -1, 1, 1, numtrainers_opt);
+  region_ptr[current_region_x][current_region_y] = new_region;
+  init_region(region_ptr[current_region_x][current_region_y], -1, -1, -1, -1, 1, 1, numtrainers_opt);
 
-  init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
+  init_pc(&pc, region_ptr[current_region_x][current_region_y]);
   
   heap_t move_queue;
   character_t *c;
-  init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
-  recalculate_dist_maps(region_ptr[loaded_region_x][loaded_region_y], pc.pos_i, pc.pos_j);
+  init_trainer_pq(&move_queue, &pc, region_ptr[current_region_x][current_region_y]);
+  recalculate_dist_maps(region_ptr[current_region_x][current_region_y], pc.pos_i, pc.pos_j);
 
-  render_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
-  //refresh();
+  render_region(region_ptr[current_region_x][current_region_y], &pc);
+  usleep(FRAMETIME);
 
   // Run game
   int32_t quit_game = 0;
   while(!quit_game) { 
-    if (loaded_region_x != prev_region_x || loaded_region_y != prev_region_y) {
-      //load_region(loaded_region_x, loaded_region_y, numtrainers_opt);
-      prev_region_x = loaded_region_x;
-      prev_region_y = loaded_region_y;
-
-      init_pc(&pc, region_ptr[loaded_region_x][loaded_region_y]);
-
-      init_trainer_pq(&move_queue, &pc, region_ptr[loaded_region_x][loaded_region_y]);
+    if (current_region_x != loaded_region_x || current_region_y != loaded_region_y) {
+      load_region(current_region_x, current_region_y, numtrainers_opt);
+      init_trainer_pq(&move_queue, &pc, region_ptr[current_region_x][current_region_y]);
+      pc_next_region(&pc, current_region_x, current_region_y, 
+                          loaded_region_x,  loaded_region_y);
+      loaded_region_x = current_region_x;
+      loaded_region_y = current_region_y;
     }
 
     if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
-      recalculate_dist_maps(region_ptr[loaded_region_x][loaded_region_y], pc.pos_i, pc.pos_j);
-      prev_pc_pos_i = loaded_region_x;
-      prev_pc_pos_j = loaded_region_y;
+      recalculate_dist_maps(region_ptr[current_region_x][current_region_y], pc.pos_i, pc.pos_j);
+      prev_pc_pos_i = current_region_x;
+      prev_pc_pos_j = current_region_y;
     }
 
     int32_t ticks_since_last_frame = 0;
@@ -103,12 +102,14 @@ int main (int argc, char *argv[])
         step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
         while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
           c = heap_remove_min(&move_queue);
-          process_movement_turn(c, &loaded_region_x, &loaded_region_y, &pc, &quit_game);
-          if (quit_game)
-            break;
+          process_movement_turn(c, &current_region_x, &current_region_y, &pc, &quit_game);
           c->hn = heap_insert(&move_queue, c);
+          if (quit_game || current_region_x != loaded_region_x 
+                        || current_region_y != loaded_region_y)
+            break;
         }
-        if (quit_game)
+        if (quit_game || current_region_x != loaded_region_x 
+                      || current_region_y != loaded_region_y)
           break;
       } else {
         step = TICKS_PER_FRAME;
@@ -116,10 +117,8 @@ int main (int argc, char *argv[])
       step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
       ticks_since_last_frame += step;
     }
-    usleep(FRAMETIME);
     render_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
-    //refresh();
-    //process_input(&loaded_region_x, &loaded_region_y, &quit_game); 
+    usleep(FRAMETIME);
   }
 
   heap_delete(&move_queue);

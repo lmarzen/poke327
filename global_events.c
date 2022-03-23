@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "region.h"
@@ -11,6 +12,9 @@
 
 extern region_t *region_ptr[WORLD_SIZE][WORLD_SIZE];
 
+/*
+ * Initializes the player character on a path
+ */
 void init_pc (character_t *pc, region_t *region) {
   pc->movetime = 0;
   pc->tnr = tnr_pc;
@@ -31,6 +35,59 @@ void init_pc (character_t *pc, region_t *region) {
       }
     }
   }
+}
+
+/*
+ * This procedure updates the players position and performs movement animation.
+ * Used after moving to another region.
+ */
+void pc_next_region(character_t *pc, int32_t to_rx,    int32_t to_ry, 
+                                     int32_t from_rx,  int32_t from_ry) {
+  // player gets first move in a new region
+  pc->movetime = 0;
+
+  if (from_ry - to_ry > 0) {
+    // coming from the north
+    pc->pos_i = 0;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    pc->pos_i = 1;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    return;
+  } else if (from_ry - to_ry < 0) {
+    // coming from the south
+    pc->pos_i = MAX_ROW - 1;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    pc->pos_i = MAX_ROW - 2;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    return;
+  }
+
+  if (from_rx - to_rx > 0) {
+    // coming from the east
+    pc->pos_j = MAX_COL - 1;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    pc->pos_j = MAX_COL - 2;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    return;
+  } else if (from_rx - to_rx < 0) {
+    // coming from the west
+    pc->pos_j = 0;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    pc->pos_j = 1;
+    render_region(region_ptr[to_rx][to_ry], pc);
+    usleep(FRAMETIME);
+    return;
+  }
+
+  // If we get here we did not move regions!
+  return;
 }
 
 void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
@@ -92,38 +149,8 @@ void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
       region_ptr[region_x][region_y]->tile_arr[W_exit][0].ter = ter_border;
     }
   }
+  return;
 }
-
-/*
-    case 'n':
-      if ((*region_y) < WORLD_SIZE - 1) {
-        ++(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'e':
-      if ((*region_x) < WORLD_SIZE - 1) {
-        ++(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 's':
-      if ((*region_y) > 0) {
-        --(*region_y);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-    case 'w':
-      if ((*region_x) > 0) {
-        --(*region_x);
-      } else {
-        printf("Illegal input, out of bounds.\n");
-      }
-      break;
-*/
 
 /*
  * Free all memomry allocated to regions
@@ -522,29 +549,29 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
   while (no_op)  {
     key = getch();
     if (CTRL_N) {
-      process_pc_move_attempt(pc, dir_n, region_ptr[*region_x][*region_y], quit_game);
-      //check_move_regions(pc);
+      process_pc_move_attempt(pc, dir_n, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_NE) {
-      process_pc_move_attempt(pc, dir_ne, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_ne, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_E) {
-      process_pc_move_attempt(pc, dir_e, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_e, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_SE) {
-      process_pc_move_attempt(pc, dir_se, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_se, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_S) {
-      process_pc_move_attempt(pc, dir_s, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_s, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_SW) {
-      process_pc_move_attempt(pc, dir_sw, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_sw, region_x, region_y, quit_game);
+      no_op = 0;
     } else if (CTRL_W) {
       no_op = 0;
-      process_pc_move_attempt(pc, dir_w, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_w, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_NW) {
-      process_pc_move_attempt(pc, dir_nw, region_ptr[*region_x][*region_y], quit_game);
+      process_pc_move_attempt(pc, dir_nw, region_x, region_y, quit_game);
       no_op = 0;
     } else if (CTRL_PASS) {
       // do nothing
