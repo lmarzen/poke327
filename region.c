@@ -449,7 +449,6 @@ void init_region (region_t *region,
   character_t *new_npc_arr = malloc(region->num_npc * sizeof(*(new_npc_arr)));
   for (int32_t m = 0; m < region->num_npc; m++) {
     int32_t spawn_attempts = 5;
-    new_npc_arr[m].movetime = 0;
     while (spawn_attempts != 0) {
       int32_t ti = (rand() % (MAX_ROW - 2)) + 1;
       int32_t tj = (rand() % (MAX_COL - 2)) + 1;
@@ -483,6 +482,7 @@ void init_region (region_t *region,
         new_npc_arr[m].pos_j = tj;
         new_npc_arr[m].tnr = tt;
         new_npc_arr[m].defeated = 0;
+        new_npc_arr[m].movetime = travel_times[region->tile_arr[ti][tj].ter][tt];
         if (tt == tnr_pacer || tnr_wanderer) {
           new_npc_arr[m].dir = rand() % 8;
         }

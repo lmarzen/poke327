@@ -288,31 +288,32 @@ void step_all_movetimes(character_t *pc, region_t *region, int32_t amount) {
 /*
  * Attempt to move player in a given direction
  */
-void process_pc_move_attempt(character_t *pc, direction_t dir,
-                             int32_t *region_x, int32_t *region_y, 
-                             int32_t *quit_game) {
+int32_t process_pc_move_attempt(character_t *pc, direction_t dir,
+                                int32_t *region_x, int32_t *region_y, 
+                                int32_t *quit_game) {
   if (check_battle(pc, pc->pos_i + dir_offsets[dir][0], 
                        pc->pos_j + dir_offsets[dir][1], 
                    region_ptr[*region_x][*region_y], quit_game)) {
-    return;
+    return 0;
   }
+
   if (is_valid_location(pc->pos_i + dir_offsets[dir][0], 
                         pc->pos_j + dir_offsets[dir][1], 
                         pc->tnr, region_ptr[*region_x][*region_y], pc) ) {
     pc->pos_i += dir_offsets[dir][0];
     pc->pos_j += dir_offsets[dir][1];
+    
+    if (pc->pos_i == 0) {
+      ++*(region_y);
+    } else if (pc->pos_i == MAX_ROW - 1) {
+      --(*region_y);
+    } else if (pc->pos_j == 0) {
+      --(*region_x);
+    } else if (pc->pos_j == MAX_COL - 1) {
+      ++(*region_x);
+    }
+    return 0;
   }
   
-  if (pc->pos_i == 0) {
-    ++*(region_y);
-  } else if (pc->pos_i == MAX_ROW - 1) {
-    --(*region_y);
-  } else if (pc->pos_j == 0) {
-    --(*region_x);
-  } else if (pc->pos_j == MAX_COL - 1) {
-    ++(*region_x);
-  }
-
-  return;
-  //render_region(region_ptr[*region_x][*region_y], pc);
+  return 1;
 }

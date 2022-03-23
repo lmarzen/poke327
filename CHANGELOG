@@ -8,7 +8,9 @@
 02/09/2022 - Added probabilistic generation of poke centers/marts.
              Added function to free all allocated regions before exit.
 02/13/2022 - Added mountain and forest terain types
-             Added Dr. Sheaffer's fibonacci queue and update Makefile accordingly.
+             Added Dr. Sheaffer's fibonacci queue
+             Update Makefile accordingly.
+             Removed navigation between regions.
              Began work on implementing Dijkstra's algorithm.
 02/14/2022 - Completed and debugged  Dijkstra's algorithm.
              Added function to print distance maps for various trainer types.
@@ -21,3 +23,6 @@
              Defeated trainers will now stop moving.
 03/22/2022 - Added placeholder screens for battles, centers, and marts.
              Added trainer list overlay.
+03/23/2022 - Added navigation between regions.
+             Invalid moves no longer pass the player's turn.
+             Added defeated indicator to the trainer list overlay

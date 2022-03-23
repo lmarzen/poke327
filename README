@@ -18,9 +18,9 @@ trainer_events.h
 
 Description
 ---
-Regions are procedurally generated. Controls can be used to navigate between regions.
-A random number of trainers will populate each region. If the player is reached it will 
-teleport to a new location within the region.
+Regions are procedurally generated and populated. Controls can be used to 
+navigate regions. Battles are initiated if the player and another trainer come 
+into contact.
 
 Key
 ---
@@ -42,6 +42,26 @@ p  Pacer
 w  Wanderer
 s  Stationary
 n  Random Walker
+
+Controls
+---
+Move North        : 'k' or '8'
+Move North East   : 'u' or '9'
+Move East         : 'l' or '6'
+Move South East   : 'n' or '3'
+Move South        : 'j' or '2'
+Move South West   : 'b' or '1'
+Move West         : 'h' or '4'
+Move North West   : 'y' or '7'
+Pass Turn         : ' ' or '5' or '.'
+Enter Building    : '>'
+Exit Building     : '<'
+Show Trainer List : 't'
+Hide Trainer List : ESC
+Scroll Up         : KEY_UP
+Scroll Down       : KEY_DOWN
+Quit Game         : 'Q'
+Leave Battle      : ESC
 
 Switches
 ---

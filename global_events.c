@@ -16,7 +16,6 @@ extern region_t *region_ptr[WORLD_SIZE][WORLD_SIZE];
  * Initializes the player character on a path
  */
 void init_pc (character_t *pc, region_t *region) {
-  pc->movetime = 0;
   pc->tnr = tnr_pc;
   pc->defeated = 0;
 
@@ -35,6 +34,7 @@ void init_pc (character_t *pc, region_t *region) {
       }
     }
   }
+  pc->movetime = travel_times[region->tile_arr[pc->pos_i][pc->pos_j].ter][pc->tnr];
 }
 
 /*
@@ -340,7 +340,7 @@ void render_tnr_overlay(character_t *pc, region_t *region, int32_t scroller_pos)
 
   clear(); 
   attron(A_BOLD);
-  mvprintw(0,0,"Relative Trainer Locations");
+  mvprintw(0,0,"Nearby Trainers");
   attroff(A_BOLD);
 
   for (i = 0; (i < region->num_npc) && (i < MAX_ROW); i++) {
@@ -394,7 +394,12 @@ void render_tnr_overlay(character_t *pc, region_t *region, int32_t scroller_pos)
     } else {
       dir_ew = 'e';
     }
-    mvprintw(i + 1,4,"(%d%c, %d%c)", rel_i, dir_ns, rel_j, dir_ew);
+    mvprintw(i + 1,4,"(%2d%c, %2d%c)", rel_i, dir_ns, rel_j, dir_ew);
+    
+    if (t.defeated) {
+      mvprintw(i + 1,15,"(defeated)");
+    }
+    
   }
   
   mvprintw(i + 2,0,"Press ESC to close overlay");
@@ -533,7 +538,6 @@ void tnr_overlay_driver(character_t *pc, region_t *region, int32_t *quit_game) {
     render_tnr_overlay(pc, region, scroller_pos);
     process_input_tnr_overlay(region, &scroller_pos, &close_overlay, quit_game);
   }
-
   return;
 }
 
@@ -549,44 +553,37 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
   while (no_op)  {
     key = getch();
     if (CTRL_N) {
-      process_pc_move_attempt(pc, dir_n, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_n, region_x, region_y, quit_game);
     } else if (CTRL_NE) {
-      process_pc_move_attempt(pc, dir_ne, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_ne, region_x, region_y, quit_game);
     } else if (CTRL_E) {
-      process_pc_move_attempt(pc, dir_e, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_e, region_x, region_y, quit_game);
     } else if (CTRL_SE) {
-      process_pc_move_attempt(pc, dir_se, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_se, region_x, region_y, quit_game);
     } else if (CTRL_S) {
-      process_pc_move_attempt(pc, dir_s, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_s, region_x, region_y, quit_game);
     } else if (CTRL_SW) {
-      process_pc_move_attempt(pc, dir_sw, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_sw, region_x, region_y, quit_game);
     } else if (CTRL_W) {
-      no_op = 0;
-      process_pc_move_attempt(pc, dir_w, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_w, region_x, region_y, quit_game);
     } else if (CTRL_NW) {
-      process_pc_move_attempt(pc, dir_nw, region_x, region_y, quit_game);
-      no_op = 0;
+      no_op = process_pc_move_attempt(pc, dir_nw, region_x, region_y, quit_game);
     } else if (CTRL_PASS) {
       // do nothing
       no_op = 0;
     } else if (CTRL_ENTER_BLDG) {
       if (region_ptr[*region_x][*region_y]->tile_arr[pc->pos_i][pc->pos_j].ter == ter_center) {
         center_driver(pc, quit_game);
+        render_region(region_ptr[*region_x][*region_y], pc);
         no_op = 0;
       } else if (region_ptr[*region_x][*region_y]->tile_arr[pc->pos_i][pc->pos_j].ter == ter_mart) {
         mart_driver(pc, quit_game);
+        render_region(region_ptr[*region_x][*region_y], pc);
         no_op = 0;
       }
     } else if (CTRL_TNR_LIST_SHOW) {
       tnr_overlay_driver(pc, region_ptr[*region_x][*region_y], quit_game);
-      no_op = 0;
+      render_region(region_ptr[*region_x][*region_y], pc);
     } else if (CTRL_QUIT_GAME) {
       *quit_game = 1;
       no_op = 0;
