@@ -67,7 +67,7 @@ static void dijkstra(region_t *region, trainer_t tnr, int32_t pc_i, int32_t pc_j
     }
   }
 
-  while ((p = heap_remove_min(&h))) {
+  while ((p = (path_t *) heap_remove_min(&h))) {
     p->hn = NULL;
 
     // North

@@ -63,7 +63,7 @@ int main (int argc, char *argv[])
   // The center of the world may also be referred to as (0,0)
   character_t pc;
   // Allocate memory for and generate the starting region
-  region_t *new_region = malloc(sizeof(*new_region));
+  region_t *new_region = (region_t *) malloc(sizeof(*new_region));
   region_ptr[current_region_x][current_region_y] = new_region;
   init_region(region_ptr[current_region_x][current_region_y], -1, -1, -1, -1, 1, 1, numtrainers_opt);
 
@@ -91,8 +91,8 @@ int main (int argc, char *argv[])
 
     if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
       recalculate_dist_maps(region_ptr[current_region_x][current_region_y], pc.pos_i, pc.pos_j);
-      prev_pc_pos_i = current_region_x;
-      prev_pc_pos_j = current_region_y;
+      prev_pc_pos_i = pc.pos_i;
+      prev_pc_pos_j = pc.pos_j;
     }
 
     int32_t ticks_since_last_frame = 0;
@@ -100,8 +100,8 @@ int main (int argc, char *argv[])
       int32_t step = ((character_t*)heap_peek_min(&move_queue))->movetime;
       if (step <= TICKS_PER_FRAME) {
         step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
-        while( ((character_t*)heap_peek_min(&move_queue))->movetime == 0) {
-          c = heap_remove_min(&move_queue);
+        while( ((character_t *) heap_peek_min(&move_queue))->movetime == 0 ) {
+          c = (character_t *) heap_remove_min(&move_queue);
           process_movement_turn(c, &current_region_x, &current_region_y, &pc, &quit_game);
           c->hn = heap_insert(&move_queue, c);
           if (quit_game || current_region_x != loaded_region_x 

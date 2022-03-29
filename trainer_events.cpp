@@ -225,7 +225,7 @@ void process_movement_turn(character_t *c,
       c->pos_i += dir_offsets[c->dir][0];
       c->pos_j += dir_offsets[c->dir][1];
     } else {
-      c->dir = (c->dir + 4) % 8;
+      c->dir = static_cast<direction_t>((c->dir + 4) % 8);
     }
     break;
   case tnr_wanderer:
@@ -242,7 +242,7 @@ void process_movement_turn(character_t *c,
       c->pos_i += dir_offsets[c->dir][0];
       c->pos_j += dir_offsets[c->dir][1];
     } else {
-      c->dir = rand() % 8;
+      c->dir = static_cast<direction_t>(rand() % 8);
     }
     break;
   case tnr_stationary:
@@ -260,7 +260,7 @@ void process_movement_turn(character_t *c,
       c->pos_i += dir_offsets[c->dir][0];
       c->pos_j += dir_offsets[c->dir][1];
     } else {
-      c->dir = rand() % 8;
+      c->dir = static_cast<direction_t>(rand() % 8);
     }
     break;
   default:

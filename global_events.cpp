@@ -93,7 +93,7 @@ void pc_next_region(character_t *pc, int32_t to_rx,    int32_t to_ry,
 void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
   // If the region we are in is uninitialized, then generate the region.
   if (region_ptr[region_x][region_y] == NULL) {
-    region_t *new_region = malloc(sizeof(*new_region));
+    region_t *new_region = (region_t *) malloc(sizeof(*new_region));
     region_ptr[region_x][region_y] = new_region;
     int32_t N_exit, E_exit, S_exit, W_exit;
     N_exit = -1;
@@ -584,9 +584,8 @@ void process_input_nav (character_t *pc, int32_t *region_x, int32_t *region_y, i
     } else if (CTRL_TNR_LIST_SHOW) {
       tnr_overlay_driver(pc, region_ptr[*region_x][*region_y], quit_game);
       render_region(region_ptr[*region_x][*region_y], pc);
-      if (*quit_game == 1) {
+      if (*quit_game == 1)
         no_op = 0;
-      }
     } else if (CTRL_QUIT_GAME) {
       *quit_game = 1;
       no_op = 0;
