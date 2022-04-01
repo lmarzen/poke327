@@ -1,7 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <limits.h>
 #include <ncurses.h>
 
 // Controls
@@ -22,6 +21,20 @@
 #define CTRL_SCROLL_DOWN    key == KEY_DOWN
 #define CTRL_QUIT_GAME      key == 'Q'
 #define CTRL_LEAVE_BATTLE   key == 27 // ESC
+
+// Places that pokedex database will be looked for (ending with a slash)
+#define POKEDEX_DB_PATH_1 /share/cs327/pokedex/
+// path 2 begins from the $HOME directory
+#define POKEDEX_DB_PATH_2 /.poke327/pokedex/
+#define POKEDEX_DB_PATH_3 ./pokedex/
+
+// pokedex file paths
+#define POKEDEX_POKEMON_PATH         pokedex/data/csv/pokemon.csv
+#define POKEDEX_MOVES_PATH           pokedex/data/csv/moves.csv
+#define POKEDEX_POKEMON_MOVES_PATH   pokedex/data/csv/pokemon_moves.csv
+#define POKEDEX_POKEMON_SPECIES_PATH pokedex/data/csv/pokemon_species.csv
+#define POKEDEX_EXPERIENCE_PATH      pokedex/data/csv/experience.csv
+#define POKEDEX_TYPE_NAMES_PATH      pokedex/data/csv/type_names.csv
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
@@ -84,20 +97,5 @@
 #define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers
 #define MIN_TRAINERS 6
 #define MAX_TRAINERS 12
-
-static const int32_t travel_times[11][7] = {
-                  /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
-  /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_boulder  */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_tree     */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_center   */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_mart     */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_path     */ {     10,      10,      10,      10,      10,      10,      10},
-  /* ter_grass    */ {     20,      15,      20,      20,      20,      20,      20},
-  /* ter_clearing */ {     10,      10,      10,      10,      10,      10,      10},
-  /* ter_mountain */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_forest   */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX}
-};
 
 #endif

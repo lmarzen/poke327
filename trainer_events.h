@@ -1,21 +1,27 @@
 #ifndef TRAINER_EVENTS_H
 #define TRAINER_EVENTS_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "heap.h"
 #include "region.h"
+#include "character.h"
 
 typedef struct battle {
-  character_t *pc;
-  character_t *opp;
+  Character *pc;
+  Character *opp;
   int32_t end_battle;
 } battle_t;
 
-void init_trainer_pq(heap_t *queue, character_t *pc, region_t *region);
-void move_trainer(character_t *c, region_t *region, character_t *pc);
-void step_all_movetimes(character_t *pc, region_t *region, int32_t amount);
-void process_movement_turn(character_t *c, int32_t *region_x, int32_t *region_y, character_t *pc, int32_t *quit_game);
-int32_t process_pc_move_attempt(character_t *pc, direction_t dir, int32_t *region_x, int32_t *region_y, int32_t *quit_game);
+void init_trainer_pq(heap_t *queue, Region *r);
+void battle_driver(Character *opp, Pc *pc);
+bool check_battle(int32_t to_i, int32_t to_j);
+bool is_valid_location(int32_t to_i, int32_t to_j, trainer_t tnr);
+bool is_valid_gradient(int32_t to_i, int32_t to_j, 
+                       int32_t dist_map[MAX_ROW][MAX_COL]);
+void move_along_gradient(Character *c, int32_t dist_map[MAX_ROW][MAX_COL]);
+void step_all_movetimes(Region *r, int32_t amount);
+int32_t process_pc_move_attempt(direction_t dir);
+
 
 #endif

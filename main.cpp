@@ -1,14 +1,16 @@
-#include <limits.h>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <climits>
 #include <ncurses.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
 
 #include "config.h"
 #include "heap.h"
+#include "pokedex.h"
+#include "character.h"
 #include "region.h"
 #include "pathfinding.h"
 #include "global_events.h"
@@ -16,23 +18,55 @@
 
 // Global variables
 // 2D array of pointers, each pointer points to one of the regions the world
-region_t *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
+Region *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
+Pc *pc;
 int32_t dist_map_hiker[MAX_ROW][MAX_COL];
 int32_t dist_map_rival[MAX_ROW][MAX_COL];
 
 void usage(const char *argv0) {
-  fprintf(stderr, "Usage: %s [--numtrainers|--seed] <int>\n", argv0);
+  std::cout << "Usage: " << argv0 << " [--numtrainers|--seed] <int>" 
+            << std::endl;
   exit(-1);
 }
 
 int main (int argc, char *argv[])
 {
+  if (argc == 2) {
+    if (!strcmp(argv[1], "pokemon")) {
+      init_pokedex_pokemon();
+    } else if (!strcmp(argv[1], "moves")) {
+      init_pokedex_moves();
+    } else if (!strcmp(argv[1], "pokemon_moves")) {
+      init_pokedex_pokemon_moves();
+    } else if (!strcmp(argv[1], "pokemon_species")) {
+      init_pokedex_pokemon_species();
+    } else if (!strcmp(argv[1], "experience")) {
+      init_pokedex_experience();
+    } else if (!strcmp(argv[1], "type_names")) {
+      init_pokedex_type_name();
+    } else {
+      std::cout << "Usage: " << argv[0] 
+                << " [pokemon|moves|pokemon_moves|pokemon_species|experience|type_names]" 
+                << std::endl;
+      return -1;
+    }
+  } else {
+    std::cout << "Usage: " << argv[0] 
+            << " [pokemon|moves|pokemon_moves|pokemon_species|experience|type_names]" 
+            << std::endl;
+    return -1;
+  }
+  
+  exit(0);
+  //////////////////////////////////////////////////////////////////////////////
+
+
+
+
   int32_t seed;
   int32_t numtrainers_opt = NUM_TRAINERS;
-  int32_t current_region_x = WORLD_SIZE/2;
-  int32_t current_region_y = WORLD_SIZE/2;
-  int32_t loaded_region_x = current_region_x;
-  int32_t loaded_region_y = current_region_y;
+  int32_t loaded_region_x = WORLD_SIZE/2;
+  int32_t loaded_region_y = WORLD_SIZE/2;
   int32_t prev_pc_pos_i = -1;
   int32_t prev_pc_pos_j = -1;
   
@@ -59,65 +93,62 @@ int main (int argc, char *argv[])
 
   init_terminal();
 
-  // start in center of the world. 
-  // The center of the world may also be referred to as (0,0)
-  character_t pc;
   // Allocate memory for and generate the starting region
-  region_t *new_region = (region_t *) malloc(sizeof(*new_region));
-  region_ptr[current_region_x][current_region_y] = new_region;
-  init_region(region_ptr[current_region_x][current_region_y], -1, -1, -1, -1, 1, 1, numtrainers_opt);
-
-  init_pc(&pc, region_ptr[current_region_x][current_region_y]);
+  Region *new_region = new Region(-1, -1, -1, -1, 1, 1);
+  new_region->populate(numtrainers_opt);
+  region_ptr[WORLD_SIZE/2][WORLD_SIZE/2] = new_region;
+  pc = new Pc(WORLD_SIZE/2, WORLD_SIZE/2);
   
   heap_t move_queue;
-  character_t *c;
-  init_trainer_pq(&move_queue, &pc, region_ptr[current_region_x][current_region_y]);
-  recalculate_dist_maps(region_ptr[current_region_x][current_region_y], pc.pos_i, pc.pos_j);
+  Character *c;
+  init_trainer_pq(&move_queue, region_ptr[pc->get_x()][pc->get_y()]);
+  recalculate_dist_maps(region_ptr[pc->get_x()][pc->get_y()], 
+                        pc->get_i(), pc->get_j());
 
-  render_region(region_ptr[current_region_x][current_region_y], &pc);
+  render_region(new_region);
   usleep(FRAMETIME);
 
   // Run game
-  int32_t quit_game = 0;
-  while(!quit_game) { 
-    if (current_region_x != loaded_region_x || current_region_y != loaded_region_y) {
-      load_region(current_region_x, current_region_y, numtrainers_opt);
-      init_trainer_pq(&move_queue, &pc, region_ptr[current_region_x][current_region_y]);
-      pc_next_region(&pc, current_region_x, current_region_y, 
-                          loaded_region_x,  loaded_region_y);
-      loaded_region_x = current_region_x;
-      loaded_region_y = current_region_y;
+  while(!pc->is_quit_game()) { 
+    if (pc->get_x() != loaded_region_x || pc->get_y() != loaded_region_y) {
+      load_region(pc->get_x(), pc->get_y(), numtrainers_opt);
+      init_trainer_pq(&move_queue, region_ptr[pc->get_x()][pc->get_y()]);
+      pc_next_region(pc->get_x()    , pc->get_y()    , 
+                     loaded_region_x, loaded_region_y);
+      loaded_region_x = pc->get_x();
+      loaded_region_y = pc->get_y();
     }
 
-    if (pc.pos_i != prev_pc_pos_i || pc.pos_j != prev_pc_pos_j) {
-      recalculate_dist_maps(region_ptr[current_region_x][current_region_y], pc.pos_i, pc.pos_j);
-      prev_pc_pos_i = pc.pos_i;
-      prev_pc_pos_j = pc.pos_j;
+    if (pc->get_i() != prev_pc_pos_i || pc->get_j() != prev_pc_pos_j) {
+      recalculate_dist_maps(region_ptr[pc->get_x()][pc->get_y()], 
+                            pc->get_i(), pc->get_j());
+      prev_pc_pos_i = pc->get_i();
+      prev_pc_pos_j = pc->get_j();
     }
 
     int32_t ticks_since_last_frame = 0;
     while (ticks_since_last_frame <= TICKS_PER_FRAME) {
-      int32_t step = ((character_t*)heap_peek_min(&move_queue))->movetime;
+      int32_t step = ((Character*)heap_peek_min(&move_queue))->get_movetime();
       if (step <= TICKS_PER_FRAME) {
-        step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
-        while( ((character_t *) heap_peek_min(&move_queue))->movetime == 0 ) {
-          c = (character_t *) heap_remove_min(&move_queue);
-          process_movement_turn(c, &current_region_x, &current_region_y, &pc, &quit_game);
-          c->hn = heap_insert(&move_queue, c);
-          if (quit_game || current_region_x != loaded_region_x 
-                        || current_region_y != loaded_region_y)
+        step_all_movetimes(region_ptr[loaded_region_x][loaded_region_y], step);
+        while( ((Character*) heap_peek_min(&move_queue))->get_movetime() == 0 ) {
+          c = (Character*) heap_remove_min(&move_queue);
+          c->process_movement_turn();
+          heap_insert(&move_queue, c);
+          if (pc->is_quit_game() || pc->get_x() != loaded_region_x 
+                                 || pc->get_y() != loaded_region_y)
             break;
         }
-        if (quit_game || current_region_x != loaded_region_x 
-                      || current_region_y != loaded_region_y)
+        if (pc->is_quit_game() || pc->get_x() != loaded_region_x 
+                               || pc->get_y() != loaded_region_y)
           break;
       } else {
         step = TICKS_PER_FRAME;
       }
-      step_all_movetimes(&pc, region_ptr[loaded_region_x][loaded_region_y], step);
+      step_all_movetimes(region_ptr[loaded_region_x][loaded_region_y], step);
       ticks_since_last_frame += step;
     }
-    render_region(region_ptr[loaded_region_x][loaded_region_y], &pc);
+    render_region(region_ptr[loaded_region_x][loaded_region_y]);
     usleep(FRAMETIME);
   }
 

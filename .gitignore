@@ -2,3 +2,4 @@ core
 vgcore.*
 *.o
 .vscode
+pokedex
