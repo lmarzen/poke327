@@ -1,26 +1,35 @@
 Files
 ---
 CHANGELOG
+character.cpp
+character.h
 config.h
-global_events.c
+global_events.cpp
 global_events.h
 heap.c
 heap.h
-main.c
+main.cpp
 Makefile
-pathfinding.c
+pathfinding.cpp
 pathfinding.h
+pokedex.cpp
+pokedex.h
 README
-region.c
+region.cpp
 region.h
-trainer_events.c
+trainer_events.cpp
 trainer_events.h
 
 Description
 ---
 Regions are procedurally generated and populated. Controls can be used to 
 navigate regions. Battles are initiated if the player and another trainer come 
-into contact.
+into contact. Player/Npc Character and Region types are implemented as classes. 
+Pokedex database files will be searched for and parsed. Written in C++.
+
+The program is currently configured to only parse the pokedex file provided as 
+the first argument, before then exiting. The current usage is as follows:
+./poke [pokemon|moves|pokemon_moves|pokemon_species|experience|type_names]
 
 Key
 ---

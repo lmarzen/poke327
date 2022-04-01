@@ -2,8 +2,8 @@ TARGET = poke
 LIBS = -lm -lncurses
 CC = gcc
 CXX = g++
-# CFLAGS = -Wall -O2
-CFLAGS = -Wall -ggdb
+CFLAGS = -Wall -O2
+# CFLAGS = -Wall -ggdb
 
 HEADERS = config.h heap.h region.h pathfinding.h trainer_events.h global_events.h character.h pokedex.h
 OBJECTS = main.o heap.o region.o pathfinding.o trainer_events.o global_events.o character.o pokedex.o

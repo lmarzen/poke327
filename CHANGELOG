@@ -26,3 +26,6 @@
 03/23/2022 - Added navigation between regions.
              Invalid moves no longer pass the player's turn.
              Added defeated indicator to the trainer list overlay
+03/29/2022 - Converted to C++
+03/30/2022 - Reimplemented Character(Pc/Npc) and Region structs as classes
+03/31/2022 - Added pokedex database parsing
