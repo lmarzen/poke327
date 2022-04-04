@@ -8,7 +8,7 @@
 
 #include "config.h"
 
-typedef struct pokedex_pokemon {
+typedef struct pd_pokemon {
   int32_t     id;
   std::string identifier;
   int32_t     species_id;
@@ -17,9 +17,9 @@ typedef struct pokedex_pokemon {
   int32_t     base_experience;
   int32_t     order;
   bool        is_default;
-} pokemon_t;
+} pd_pokemon_t;
 
-typedef struct pokedex_move {
+typedef struct pd_move {
   int32_t     id;
   std::string identifier;
   int32_t     generation_id;
@@ -35,18 +35,18 @@ typedef struct pokedex_move {
   int32_t     contest_type_id;
   int32_t     contest_effect_id;
   int32_t     super_contest_effect_id;
-} move_t;
+} pd_move_t;
 
-typedef struct pokedex_pokemon_move {
+typedef struct pd_pokemon_move {
   int32_t     pokemon_id;
   int32_t     version_group_id;
   int32_t     move_id;
   int32_t     pokemon_move_method_id;
   int32_t     level;
   int32_t     order;
-} pokemon_move_t;
+} pd_pokemon_move_t;
 
-typedef struct pokedex_pokemon_species {
+typedef struct pd_pokemon_species {
   int32_t     id;
   std::string identifier;
   int32_t     generation_id;
@@ -67,34 +67,43 @@ typedef struct pokedex_pokemon_species {
   int32_t     is_mythical;
   int32_t     order;
   int32_t     conquest_order;
-} pokemon_species_t;
+} pd_pokemon_species_t;
 
-typedef struct pokedex_experience {
+typedef struct pd_pokemon_stat {
+  int32_t     pokemon_id;
+  int32_t     stat_id;
+  int32_t     base_stat;
+  int32_t     effort;
+} pd_pokemon_stat_t;
+
+typedef struct pd_experience {
   int32_t     growth_rate_id;
   int32_t     level;
   int32_t     experience;
-} experience_t;
+} pd_experience_t;
 
-typedef struct pokedex_type_name {
+typedef struct pd_type_name {
   int32_t     type_id;
   std::string name;
-} type_name_t;
+} pd_type_name_t;
 
 // Global pokedex data
-extern std::vector<pokemon_t> pokedex_pokemon_data;
-extern std::vector<move_t> pokedex_moves;
-extern std::vector<pokemon_move_t> pokedex_pokemon_moves;
-extern std::vector<pokemon_species_t> pokedex_pokemon_species;
-extern std::vector<experience_t> pokedex_experience;
-extern std::vector<type_name_t> pokedex_type_name;
+extern std::vector<pd_pokemon_t> pd_pokemon_data;
+extern std::vector<pd_move_t> pd_moves;
+extern std::vector<pd_pokemon_move_t> pd_pokemon_moves;
+extern std::vector<pd_pokemon_species_t> pd_pokemon_species;
+extern std::vector<pd_pokemon_stat_t> pd_pokemon_stats;
+extern std::vector<pd_experience_t> pd_experience;
+extern std::vector<pd_type_name_t> pd_type_name;
 
-void init_pokedex_pokemon();
-void init_pokedex_moves();
-void init_pokedex_pokemon_moves();
-void init_pokedex_pokemon_species();
-void init_pokedex_experience();
-void init_pokedex_type_name();
-void init_pokedex();
+void init_pd_pokemon();
+void init_pd_moves();
+void init_pd_pokemon_moves();
+void init_pd_pokemon_species();
+void init_pd_pokemon_stats();
+void init_pd_experience();
+void init_pd_type_name();
+void init_pd();
 
 
 #endif

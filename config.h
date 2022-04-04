@@ -22,10 +22,15 @@
 #define CTRL_QUIT_GAME      key == 'Q'
 #define CTRL_LEAVE_BATTLE   key == 27 // ESC
 
+// Will print parsing debug info and parsed data to terminal if defined
+// #define VERBOSE_POKEDEX
+
 // Places that pokedex database will be looked for (ending with a slash)
+// path 1 begins from root
 #define POKEDEX_DB_PATH_1 /share/cs327/pokedex/
 // path 2 begins from the $HOME directory
 #define POKEDEX_DB_PATH_2 /.poke327/pokedex/
+// path 3 begins from root
 #define POKEDEX_DB_PATH_3 ./pokedex/
 
 // pokedex file paths
@@ -33,6 +38,7 @@
 #define POKEDEX_MOVES_PATH           pokedex/data/csv/moves.csv
 #define POKEDEX_POKEMON_MOVES_PATH   pokedex/data/csv/pokemon_moves.csv
 #define POKEDEX_POKEMON_SPECIES_PATH pokedex/data/csv/pokemon_species.csv
+#define POKEDEX_POKEMON_STATS_PATH   pokedex/data/csv/pokemon_stats.csv
 #define POKEDEX_EXPERIENCE_PATH      pokedex/data/csv/experience.csv
 #define POKEDEX_TYPE_NAMES_PATH      pokedex/data/csv/type_names.csv
 

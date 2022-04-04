@@ -31,37 +31,39 @@ void usage(const char *argv0) {
 
 int main (int argc, char *argv[])
 {
+
+/*//////////////////////////////////////////////////////////////////////////////
   if (argc == 2) {
     if (!strcmp(argv[1], "pokemon")) {
-      init_pokedex_pokemon();
+      init_pd_pokemon();
     } else if (!strcmp(argv[1], "moves")) {
-      init_pokedex_moves();
+      init_pd_moves();
     } else if (!strcmp(argv[1], "pokemon_moves")) {
-      init_pokedex_pokemon_moves();
+      init_pd_pokemon_moves();
     } else if (!strcmp(argv[1], "pokemon_species")) {
-      init_pokedex_pokemon_species();
+      init_pd_pokemon_species();
+    } else if (!strcmp(argv[1], "pokemon_stats")) {
+      init_pd_pokemon_stats();
     } else if (!strcmp(argv[1], "experience")) {
-      init_pokedex_experience();
+      init_pd_experience();
     } else if (!strcmp(argv[1], "type_names")) {
-      init_pokedex_type_name();
+      init_pd_type_name();
     } else {
       std::cout << "Usage: " << argv[0] 
-                << " [pokemon|moves|pokemon_moves|pokemon_species|experience|type_names]" 
+                << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names]" 
                 << std::endl;
       return -1;
     }
   } else {
     std::cout << "Usage: " << argv[0] 
-            << " [pokemon|moves|pokemon_moves|pokemon_species|experience|type_names]" 
+            << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names]" 
             << std::endl;
     return -1;
   }
   
   exit(0);
-  //////////////////////////////////////////////////////////////////////////////
-
-
-
+  ////////////////////////////////////////////////////////////////////////////*/
+  init_pd();
 
   int32_t seed;
   int32_t numtrainers_opt = NUM_TRAINERS;
@@ -90,7 +92,9 @@ int main (int argc, char *argv[])
     }
   }
   srand(seed);
+  std::cout << "Using seed: " << seed << std::endl;
 
+  std::cout << "Initializing terminal...: " << std::endl;
   init_terminal();
 
   // Allocate memory for and generate the starting region
