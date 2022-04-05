@@ -214,6 +214,17 @@ void render_battle(battle_t *battle) {
 }
 
 /*
+ * Renders an encounter to the screen
+ */
+void render_encounter(encounter_t *encounter) { 
+  clear(); 
+  mvprintw(0,0,"***Wild encounter placeholder***");
+  mvprintw(2,0,"Press ESC to exit encounter");
+  refresh();
+  return;
+}
+
+/*
  * Renders a poke center to the screen
  */
 void render_center() { 
@@ -299,6 +310,27 @@ void process_input_battle(battle_t *battle) {
     key = getch();
     if (CTRL_LEAVE_BATTLE) {
       battle->end_battle = 1;
+      no_op = 0;
+    } else if (CTRL_QUIT_GAME) {
+      pc->set_quit_game(true);
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in an encounter
+ */
+void process_input_encounter(encounter_t *encounter) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_LEAVE_BATTLE) {
+      encounter->end_encounter = 1;
       no_op = 0;
     } else if (CTRL_QUIT_GAME) {
       pc->set_quit_game(true);

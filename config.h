@@ -33,7 +33,7 @@
 // path 3 begins from root
 #define POKEDEX_DB_PATH_3 ./pokedex/
 
-// pokedex file paths
+// pokedex database file paths
 #define POKEDEX_POKEMON_PATH         pokedex/data/csv/pokemon.csv
 #define POKEDEX_MOVES_PATH           pokedex/data/csv/moves.csv
 #define POKEDEX_POKEMON_MOVES_PATH   pokedex/data/csv/pokemon_moves.csv
@@ -41,6 +41,15 @@
 #define POKEDEX_POKEMON_STATS_PATH   pokedex/data/csv/pokemon_stats.csv
 #define POKEDEX_EXPERIENCE_PATH      pokedex/data/csv/experience.csv
 #define POKEDEX_TYPE_NAMES_PATH      pokedex/data/csv/type_names.csv
+// pokedex database entry count 
+// number of entries = line count - 1; because there is a header line
+#define POKEDEX_POKEMON_ENTRIES         1092   // 1093 total lines
+#define POKEDEX_MOVES_ENTRIES           844    // 845 total lines
+#define POKEDEX_POKEMON_MOVES_ENTRIES   528238 // 528239 total lines
+#define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total lines
+#define POKEDEX_POKEMON_STATS_ENTRIES   6552   // 6553 total lines
+#define POKEDEX_EXPERIENCE_ENTRIES      600    // 601 total lines
+#define POKEDEX_TYPE_NAMES_ENTRIES      19     // 19 english types
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
@@ -55,7 +64,9 @@
 #define MAX_COL 80
 
 // The number of biomes that will populate each region
-#define MIN_SEEDS_PER_REGION 6 // The first 2 will be grass the next 2 will be clearings after that it is randomized.
+// The first 2 seeds will be grass the next 2 seeds will be clearings after that
+// it is randomized.
+#define MIN_SEEDS_PER_REGION 6
 #define MAX_SEEDS_PER_REGION 12
 
 // Symbols

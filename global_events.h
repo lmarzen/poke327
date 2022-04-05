@@ -14,6 +14,8 @@ void init_terminal();
 void render_region(Region *r);
 void render_battle(battle_t *battle);
 void process_input_battle(battle_t *battle);
+void render_encounter(encounter_t *encounter);
+void process_input_encounter(encounter_t *encounter);
 void process_input_nav();
 void exit_w_message(const char* message);
 

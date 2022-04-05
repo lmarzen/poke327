@@ -13,9 +13,17 @@ typedef struct battle {
   int32_t end_battle;
 } battle_t;
 
+typedef struct encounter {
+  Character *pc;
+  Character *wp;
+  int32_t end_encounter;
+} encounter_t;
+
 void init_trainer_pq(heap_t *queue, Region *r);
 void battle_driver(Character *opp, Pc *pc);
 bool check_battle(int32_t to_i, int32_t to_j);
+void encounter_driver(Pc *pc);
+void check_encounter (Pc *pc);
 bool is_valid_location(int32_t to_i, int32_t to_j, trainer_t tnr);
 bool is_valid_gradient(int32_t to_i, int32_t to_j, 
                        int32_t dist_map[MAX_ROW][MAX_COL]);

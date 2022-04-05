@@ -50,9 +50,9 @@ void battle_driver(Character *opp, Pc *pc) {
 
 /*
  * Checks if a player is initiating a battle
- * Returns 1 if battle occured
+ * Returns 1 if a trainer battle occured
  */
-bool check_battle(int32_t to_i, int32_t to_j) {
+bool check_trainer_battle(int32_t to_i, int32_t to_j) {
   // get pointer to present region from global variables
   Region *r = region_ptr[pc->get_x()][pc->get_y()];
 
@@ -63,6 +63,40 @@ bool check_battle(int32_t to_i, int32_t to_j) {
       battle_driver(&(*it), pc);
       return true;
     }
+  }
+  return false;
+}
+
+/*
+ * Initiates and drives an encounter
+ */
+void encounter_driver(Pc *pc) {
+  encounter_t encounter;
+  encounter.pc = pc;
+  encounter.end_encounter = 0;
+
+  // encounter.wp = random
+  while (!encounter.end_encounter && !(pc->is_quit_game())) {
+    render_encounter(&encounter);
+    process_input_encounter(&encounter);
+  }
+
+  return;
+}
+
+/*
+ * Checks if a wild encounter should occur
+ * Returns 1 if a wild encounter occured
+ */
+bool check_wild_encounter() {
+  // get pointer to present region from global variables
+  Region *r = region_ptr[pc->get_x()][pc->get_y()];
+  // 10% chance of wild encounter if player moved to tall grass
+  int32_t randy = rand() % 9;
+
+  if ((r->get_ter(pc->get_i(),pc->get_j()) == ter_grass) && (randy == 0)) {
+    encounter_driver(pc);
+    return true;
   }
   return false;
 }
@@ -219,7 +253,7 @@ void step_all_movetimes(Region *r, int32_t amount) {
  * Friend of Pc (Player Character) class so that we can move the player
  */
 int32_t process_pc_move_attempt(direction_t dir) {
-  if (check_battle(pc->pos_i + dir_offsets[dir][0], 
+  if (check_trainer_battle(pc->pos_i + dir_offsets[dir][0], 
                    pc->pos_j + dir_offsets[dir][1])) {
     return 0;
   }
@@ -228,7 +262,7 @@ int32_t process_pc_move_attempt(direction_t dir) {
                         pc->pos_j + dir_offsets[dir][1], tnr_pc)) {
     pc->pos_i += dir_offsets[dir][0];
     pc->pos_j += dir_offsets[dir][1];
-    
+
     if (pc->pos_i == 0) {
       ++(pc->reg_y);
     } else if (pc->pos_i == MAX_ROW - 1) {
@@ -238,6 +272,11 @@ int32_t process_pc_move_attempt(direction_t dir) {
     } else if (pc->pos_j == MAX_COL - 1) {
       ++(pc->reg_x);
     }
+
+    if (check_wild_encounter()) {
+      return 0;
+    }
+
     return 0;
   }
   

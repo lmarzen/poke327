@@ -31,6 +31,12 @@ void usage(const char *argv0) {
 
 int main (int argc, char *argv[])
 {
+  int32_t seed;
+  int32_t numtrainers_opt = NUM_TRAINERS;
+  int32_t loaded_region_x = WORLD_SIZE/2;
+  int32_t loaded_region_y = WORLD_SIZE/2;
+  int32_t prev_pc_pos_i = -1;
+  int32_t prev_pc_pos_j = -1;
 
 /*//////////////////////////////////////////////////////////////////////////////
   if (argc == 2) {
@@ -63,14 +69,8 @@ int main (int argc, char *argv[])
   
   exit(0);
   ////////////////////////////////////////////////////////////////////////////*/
+  std::cout << "Parsing Pokemon database..."  << std::endl;
   init_pd();
-
-  int32_t seed;
-  int32_t numtrainers_opt = NUM_TRAINERS;
-  int32_t loaded_region_x = WORLD_SIZE/2;
-  int32_t loaded_region_y = WORLD_SIZE/2;
-  int32_t prev_pc_pos_i = -1;
-  int32_t prev_pc_pos_j = -1;
   
    // generate random seed
   struct timeval t;
@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
   srand(seed);
   std::cout << "Using seed: " << seed << std::endl;
 
-  std::cout << "Initializing terminal...: " << std::endl;
+  std::cout << "Initializing terminal..." << std::endl;
   init_terminal();
 
   // Allocate memory for and generate the starting region
