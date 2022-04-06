@@ -21,7 +21,7 @@ typedef enum stat_id {
 
 class Pokemon {
   pd_pokemon_t *pd_entry;
-  char nickname[30];
+  char nickname[31];
   int32_t level;
   int32_t exp;
   pd_move_t *moveset[4];
