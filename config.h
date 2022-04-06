@@ -45,11 +45,12 @@
 // number of entries = line count - 1; because there is a header line
 #define POKEDEX_POKEMON_ENTRIES         1092   // 1093 total lines
 #define POKEDEX_MOVES_ENTRIES           844    // 845 total lines
-#define POKEDEX_POKEMON_MOVES_ENTRIES   528238 // 528239 total lines
+#define POKEDEX_POKEMON_MOVES_ENTRIES   15836  // move_method_id=1,
+                                               // version_group_id=18
 #define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total linesQ
 #define POKEDEX_POKEMON_STATS_ENTRIES   6552   // 6553 total lines
 #define POKEDEX_EXPERIENCE_ENTRIES      600    // 601 total lines
-#define POKEDEX_TYPE_NAMES_ENTRIES      19     // 19 english types
+#define POKEDEX_TYPE_NAMES_ENTRIES      20     // 20 english types
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399

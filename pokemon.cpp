@@ -49,7 +49,6 @@ void Pokemon::populate_moveset() {
   std::vector<int32_t> levelup_learnset;
   for (int32_t i = 0; i < POKEDEX_POKEMON_MOVES_ENTRIES; ++i) {
     if ((pd_entry->species_id == pd_pokemon_moves[i].pokemon_id)
-     && (1 == pd_pokemon_moves[i].pokemon_move_method_id)
      && (level >= pd_pokemon_moves[i].level)) {
       // check if move is already in moveset
       bool is_dup = false;

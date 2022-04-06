@@ -5,6 +5,11 @@
 #include <cstring>
 #include <vector>
 
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <sys/stat.h>
+
 #include "pokedex.h"
 
 #define VAL(str) #str
@@ -17,18 +22,37 @@ pd_pokemon_move_t pd_pokemon_moves[POKEDEX_POKEMON_MOVES_ENTRIES];
 pd_pokemon_species_t pd_pokemon_species[POKEDEX_POKEMON_SPECIES_ENTRIES];
 pd_pokemon_stat_t pd_pokemon_stats[POKEDEX_POKEMON_STATS_ENTRIES];
 pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
-char *pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES];
+char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
+
+static char *next_token(char *start, char delim)
+{
+  int32_t i;
+  static char *s;
+
+  if (start) {
+    s = start;
+  }
+
+  start = s;
+
+  for (i = 0; s[i] && s[i] != delim; i++)
+    ;
+  s[i] = '\0';
+  s = s + i + 1;
+
+  return start;
+}
 
 void init_pd_pokemon() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
- 
+
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -41,49 +65,38 @@ void init_pd_pokemon() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 7)
-          col.push_back("-1");
 
-        pd_pokemon[i].id = stoi(col[0]);
-        strcpy(pd_pokemon[i].identifier, col[1].c_str());
-        pd_pokemon[i].species_id = stoi(col[2]);
-        pd_pokemon[i].height = stoi(col[3]);
-        pd_pokemon[i].weight = stoi(col[4]);
-        pd_pokemon[i].base_experience = stoi(col[5]);
-        pd_pokemon[i].order = stoi(col[6]);
-        pd_pokemon[i].is_default = stoi(col[7]);
+        pd_pokemon[i].id = atoi(next_token(line, ','));
+        strncpy(pd_pokemon[i].identifier, next_token(NULL, ','), 30);
+        pd_pokemon[i].species_id = atoi(next_token(NULL, ','));
+        pd_pokemon[i].height = atoi(next_token(NULL, ','));
+        pd_pokemon[i].weight = atoi(next_token(NULL, ','));
+        pd_pokemon[i].base_experience = atoi(next_token(NULL, ','));
+        pd_pokemon[i].order = atoi(next_token(NULL, ','));
+        pd_pokemon[i].is_default = atoi(next_token(NULL, ','));
         ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -96,15 +109,16 @@ void init_pd_pokemon() {
 }
 
 void init_pd_moves() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
- 
+  char *tmp;
+
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_MOVES_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -117,56 +131,58 @@ void init_pd_moves() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
   
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 14)
-          col.push_back("-1");
-
-        pd_moves[i].id = stoi(col[0]);
-        strcpy(pd_moves[i].identifier, col[1].c_str());
-        pd_moves[i].generation_id = stoi(col[2]);
-        pd_moves[i].type_id = stoi(col[3]);
-        pd_moves[i].power = stoi(col[4]);
-        pd_moves[i].pp = stoi(col[5]);
-        pd_moves[i].accuracy = stoi(col[6]);
-        pd_moves[i].priority = stoi(col[7]);
-        pd_moves[i].target_id = stoi(col[8]);
-        pd_moves[i].damage_class_id = stoi(col[9]);
-        pd_moves[i].effect_id = stoi(col[10]);
-        pd_moves[i].effect_chance = stoi(col[11]);
-        pd_moves[i].contest_type_id = stoi(col[12]);
-        pd_moves[i].contest_effect_id = stoi(col[13]);
-        pd_moves[i].super_contest_effect_id = stoi(col[14]);
+        pd_moves[i].id = atoi((tmp = next_token(line, ',')));
+        strcpy(pd_moves[i].identifier, (tmp = next_token(NULL, ',')));
+        tmp = next_token(NULL, ',');
+        pd_moves[i].generation_id = *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].type_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].power =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].pp =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].accuracy =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].priority =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].target_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].damage_class_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].effect_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].effect_chance =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].contest_type_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].contest_effect_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_moves[i].super_contest_effect_id =  *tmp ? atoi(tmp) : -1;
         ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -179,15 +195,16 @@ void init_pd_moves() {
 }
 
 void init_pd_pokemon_moves() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
- 
-	std::vector<std::string> col;
-	std::string line, word;
- 
+  char *tmp[6];
+
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_MOVES_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -200,47 +217,47 @@ void init_pd_pokemon_moves() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 5)
-          col.push_back("-1");
 
-        pd_pokemon_moves[i].pokemon_id = stoi(col[0]);
-        pd_pokemon_moves[i].version_group_id = stoi(col[1]);
-        pd_pokemon_moves[i].move_id = stoi(col[2]);
-        pd_pokemon_moves[i].pokemon_move_method_id = stoi(col[3]);
-        pd_pokemon_moves[i].level = stoi(col[4]);
-        pd_pokemon_moves[i].order = stoi(col[5]);
-        ++i;
+        tmp[0] = next_token(line, ',');
+        tmp[1] = next_token(NULL, ',');
+        tmp[2] = next_token(NULL, ',');
+        tmp[3] = next_token(NULL, ',');
+        tmp[4] = next_token(NULL, ',');
+        tmp[5] = next_token(NULL, ',');
+
+        if (!strcmp(tmp[1],"18") && !strcmp(tmp[3],"1")) {
+          // we only care about cols where version_group_id == 18 and
+          // pokemon_move_method_id == 1
+          pd_pokemon_moves[i].pokemon_id = *tmp[0] ? atoi(tmp[0]) : -1;
+          // pd_pokemon_moves[i].version_group_id = *tmp[1] ? atoi(tmp) : -1;
+          pd_pokemon_moves[i].move_id = *tmp[2] ? atoi(tmp[2]) : -1;
+          // pd_pokemon_moves[i].pokemon_move_method_id = *tmp[3] ? atoi(tmp) : -1;
+          pd_pokemon_moves[i].level = *tmp[4] ? atoi(tmp[4]) : -1;
+          pd_pokemon_moves[i].order = (*tmp[5] != '\n') ? atoi(tmp[5]) : -1;
+          ++i;
+        }
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -253,15 +270,16 @@ void init_pd_pokemon_moves() {
 }
 
 void init_pd_pokemon_species() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
- 
+  char *tmp;
+
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_SPECIES_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -274,61 +292,68 @@ void init_pd_pokemon_species() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 19)
-          col.push_back("-1");
 
-        pd_pokemon_species[i].id = stoi(col[0]);
-        strcpy(pd_pokemon_species[i].identifier, col[1].c_str());
-        pd_pokemon_species[i].generation_id = stoi(col[2]);
-        pd_pokemon_species[i].evolves_from_species_id = stoi(col[3]);
-        pd_pokemon_species[i].evolution_chain_id = stoi(col[4]);
-        pd_pokemon_species[i].color_id = stoi(col[5]);
-        pd_pokemon_species[i].shape_id = stoi(col[6]);
-        pd_pokemon_species[i].habitat_id = stoi(col[7]);
-        pd_pokemon_species[i].gender_rate = stoi(col[8]);
-        pd_pokemon_species[i].capture_rate = stoi(col[9]);
-        pd_pokemon_species[i].base_happiness = stoi(col[10]);
-        pd_pokemon_species[i].is_baby = stoi(col[11]);
-        pd_pokemon_species[i].hatch_counter = stoi(col[12]);
-        pd_pokemon_species[i].has_gender_differences = stoi(col[13]);
-        pd_pokemon_species[i].growth_rate_id = stoi(col[14]);
-        pd_pokemon_species[i].forms_switchable = stoi(col[15]);
-        pd_pokemon_species[i].is_legendary = stoi(col[16]);
-        pd_pokemon_species[i].is_mythical = stoi(col[17]);
-        pd_pokemon_species[i].order = stoi(col[18]);
-        pd_pokemon_species[i].conquest_order = stoi(col[19]);
+        pd_pokemon_species[i].id = atoi((tmp = next_token(line, ',')));
+        strcpy(pd_pokemon_species[i].identifier, (tmp = next_token(NULL, ',')));
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].generation_id = *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].evolves_from_species_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].evolution_chain_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].color_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].shape_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].habitat_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].gender_rate =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].capture_rate =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].base_happiness =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].is_baby =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].hatch_counter =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].has_gender_differences =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].growth_rate_id =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].forms_switchable =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].is_legendary =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].is_mythical =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].order =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_species[i].conquest_order =  *tmp ? atoi(tmp) : -1;
         ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -341,15 +366,16 @@ void init_pd_pokemon_species() {
 }
 
 void init_pd_pokemon_stats() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
+  char *tmp;
  
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_STATS_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -362,45 +388,37 @@ void init_pd_pokemon_stats() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 2)
-          col.push_back("-1");
 
-        pd_pokemon_stats[i].pokemon_id = stoi(col[0]);
-        pd_pokemon_stats[i].stat_id = stoi(col[1]);
-        pd_pokemon_stats[i].base_stat = stoi(col[2]);
-        pd_pokemon_stats[i].effort = stoi(col[3]);
+        pd_pokemon_stats[i].pokemon_id = atoi((tmp = next_token(line, ',')));
+        tmp = next_token(NULL, ',');
+        pd_pokemon_stats[i].stat_id = *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_stats[i].base_stat =  *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_stats[i].effort =  *tmp ? atoi(tmp) : -1;
         ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -413,15 +431,16 @@ void init_pd_pokemon_stats() {
 }
 
 void init_pd_experience() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
+  char *tmp;
  
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_EXPERIENCE_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -434,44 +453,35 @@ void init_pd_experience() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 2)
-          col.push_back("-1");
 
-        pd_experience[i].growth_rate_id = stoi(col[0]);
-        pd_experience[i].level = stoi(col[1]);
-        pd_experience[i].experience = stoi(col[2]);
+        pd_experience[i].growth_rate_id = atoi((tmp = next_token(line, ',')));
+        tmp = next_token(NULL, ',');
+        pd_experience[i].level = *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_experience[i].experience =  *tmp ? atoi(tmp) : -1;
         ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 
@@ -484,15 +494,16 @@ void init_pd_experience() {
 }
 
 void init_pd_type_name() {
+  FILE *f;
+  char line[800];
   std::string fname;
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
-  
-	std::vector<std::string> col;
-	std::string line, word;
- 
+  char *tmp[3];
+
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_TYPE_NAMES_PATH);
+
   while (failed != 3 && !success) {
     if (failed == 1) {
       fname = getenv("HOME");
@@ -505,47 +516,40 @@ void init_pd_type_name() {
     std::cout << "Checking for " << fname << std::endl;
     #endif
 
-    std::fstream file (fname, std::ios::in);
-    if(file.is_open())
+    if((f = fopen(fname.c_str(), "r")))
     {
       success = true;
       std::cout << "  Using " << fname << std::endl;
 
       // skip first line
-      getline(file, line);
+      fgets(line, 800, f);
       #ifdef VERBOSE_POKEDEX
-      std::cout << line << std::endl;
+      std::cout << line;
       #endif
 
-      while(getline(file, line))
+      while(fgets(line, 800, f))
       {
-        col.clear();
-        std::stringstream str(line);
-
         #ifdef VERBOSE_POKEDEX
-        std::cout << line << std::endl;
+        std::cout << line;
         #endif
-  
-        while(getline(str, word, ',')) {
-          if(word == "")
-            word = "-1";
-          col.push_back(word);
-        }
-        // if last item is empty then the last col will not have gotten parsed
-        // by the above while loop
-        if (col.size() == 2)
-          col.push_back("-1");
+
+        tmp[0] = next_token(line, ',');
+        tmp[1] = next_token(NULL, ',');
+        tmp[2] = next_token(NULL, ',');
 
         // only include english type names, language_id == 9
-        if (col[1] == "9") {
+        if (!strcmp(tmp[1],"9") ) {
           // we only care about col 2 since we are assuming the order 
-          // corresponds with  type_id
-          //strcpy(pd_type_names[i], col[2].c_str());
+          // corresponds with type_id
+          strncpy(pd_type_names[i], tmp[2], 30);
+          ++i;
         }
-        ++i;
       }
     } else {
       ++failed;
+    }
+    if (success) {
+      fclose(f);
     }
   }
 

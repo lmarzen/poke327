@@ -20,7 +20,7 @@ typedef struct pd_pokemon {
 } pd_pokemon_t;
 
 typedef struct pd_move {
-  int32_t id;
+  int16_t id;
   char    identifier[30];
   int32_t generation_id;
   int32_t type_id;
@@ -39,9 +39,9 @@ typedef struct pd_move {
 
 typedef struct pd_pokemon_move {
   int32_t pokemon_id;
-  int32_t version_group_id;
-  int32_t move_id;
-  int32_t pokemon_move_method_id;
+  // int32_t version_group_id;
+  int16_t move_id;
+  // int32_t pokemon_move_method_id;
   int32_t level;
   int32_t order;
 } pd_pokemon_move_t;
@@ -89,7 +89,7 @@ extern pd_pokemon_move_t pd_pokemon_moves[POKEDEX_POKEMON_MOVES_ENTRIES];
 extern pd_pokemon_species_t pd_pokemon_species[POKEDEX_POKEMON_SPECIES_ENTRIES];
 extern pd_pokemon_stat_t pd_pokemon_stats[POKEDEX_POKEMON_STATS_ENTRIES];
 extern pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
-extern char *pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES];
+extern char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
 
 void init_pd_pokemon();
 void init_pd_moves();
@@ -99,6 +99,5 @@ void init_pd_pokemon_stats();
 void init_pd_experience();
 void init_pd_type_name();
 void init_pd();
-
 
 #endif

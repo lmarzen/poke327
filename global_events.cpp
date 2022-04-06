@@ -221,7 +221,7 @@ void render_encounter(encounter_t *encounter) {
   mvprintw(0, 0,"***Wild encounter placeholder***");
   mvprintw(2, 0,"Wild Pokemon Summary:");
   mvprintw(3, 2, "%s", (*encounter).wp->get_nickname());
-  mvprintw(3, 17, "lvl %d", (*encounter).wp->get_level());
+  mvprintw(3, 32, "lvl %d", (*encounter).wp->get_level());
   mvprintw(4, 2, (*encounter).wp->get_gender() ? "Male" : "Female");
   mvprintw(4, 17, (*encounter).wp->is_shiny() ? "Shiny" : "Not Shiny");
   mvprintw(6, 2, "Stats");
@@ -239,7 +239,20 @@ void render_encounter(encounter_t *encounter) {
   mvprintw(11,17, "%d", (*encounter).wp->get_iv(stat_sp_def));
   mvprintw(12,17, "%d", (*encounter).wp->get_iv(stat_speed));
 
-  mvprintw(13,0,"Press ESC to exit encounter");
+  mvprintw(14,2, "Moves");
+  pd_move_t *moveslot_0 = (*encounter).wp->get_move(0);
+  pd_move_t *moveslot_1 = (*encounter).wp->get_move(1);
+  pd_move_t *moveslot_2 = (*encounter).wp->get_move(2);
+  pd_move_t *moveslot_3 = (*encounter).wp->get_move(3);
+  if (moveslot_0 != 0)
+    mvprintw(15,2, "%s", moveslot_0->identifier);
+  if (moveslot_1 != 0)
+    mvprintw(16,2, "%s", moveslot_1->identifier);
+  if (moveslot_2 != 0)
+    mvprintw(17,2, "%s", moveslot_2->identifier);
+  if (moveslot_3 != 0)
+    mvprintw(18,2, "%s", moveslot_3->identifier);
+  mvprintw(20,0,"Press ESC to exit encounter");
   refresh();
   return;
 }
