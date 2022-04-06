@@ -46,7 +46,7 @@
 #define POKEDEX_POKEMON_ENTRIES         1092   // 1093 total lines
 #define POKEDEX_MOVES_ENTRIES           844    // 845 total lines
 #define POKEDEX_POKEMON_MOVES_ENTRIES   528238 // 528239 total lines
-#define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total lines
+#define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total linesQ
 #define POKEDEX_POKEMON_STATS_ENTRIES   6552   // 6553 total lines
 #define POKEDEX_EXPERIENCE_ENTRIES      600    // 601 total lines
 #define POKEDEX_TYPE_NAMES_ENTRIES      19     // 19 english types
@@ -55,7 +55,7 @@
 #define WORLD_SIZE 399
 
 #define FRAMETIME 125000 // in microseconds
-#define TICKS_PER_SEC 20
+#define TICKS_PER_SEC 40
 #define FRAMES_PER_SEC (1000000/FRAMETIME)
 #define TICKS_PER_FRAME (TICKS_PER_SEC/FRAMES_PER_SEC)
 
@@ -114,5 +114,11 @@
 #define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers
 #define MIN_TRAINERS 6
 #define MAX_TRAINERS 12
+
+#define POKEMON_MIN_LEVEL 1
+#define POKEMON_MAX_LEVEL 100
+// rates below are 1 in X odds
+#define POKEMON_ENCOUNTER_RATE 10
+#define POKEMON_SHINY_RATE 8192
 
 #endif

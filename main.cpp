@@ -69,11 +69,9 @@ int main (int argc, char *argv[])
   
   exit(0);
   ////////////////////////////////////////////////////////////////////////////*/
-  std::cout << "Parsing Pokemon database..."  << std::endl;
-  init_pd();
   
    // generate random seed
-  struct timeval t;
+  struct timeval t, time_last_frame, time_now;
   gettimeofday(&t, NULL);
   seed = (t.tv_usec ^ (t.tv_sec << 20)) & 0xffffffff;
 
@@ -94,6 +92,9 @@ int main (int argc, char *argv[])
   srand(seed);
   std::cout << "Using seed: " << seed << std::endl;
 
+  std::cout << "Parsing Pokedex database..."  << std::endl;
+  init_pd();
+
   std::cout << "Initializing terminal..." << std::endl;
   init_terminal();
 
@@ -111,6 +112,7 @@ int main (int argc, char *argv[])
 
   render_region(new_region);
   usleep(FRAMETIME);
+  gettimeofday(&time_last_frame, NULL);
 
   // Run game
   while(!pc->is_quit_game()) { 
@@ -152,8 +154,21 @@ int main (int argc, char *argv[])
       step_all_movetimes(region_ptr[loaded_region_x][loaded_region_y], step);
       ticks_since_last_frame += step;
     }
+    
+    // Render game and modulate frame rate
+    ////////////////////////////////////////////////////////////////////////////
     render_region(region_ptr[loaded_region_x][loaded_region_y]);
-    usleep(FRAMETIME);
+    gettimeofday(&time_now, NULL);
+    int32_t timediff = (time_now.tv_sec - time_last_frame.tv_sec) * 1000000 
+                      + time_now.tv_usec - time_last_frame.tv_usec;
+    int32_t sleep_time = FRAMETIME - timediff;
+    if (sleep_time < 0)
+      sleep_time = 0;
+    // mvprintw(0,0,"FPS: %f", (1000000.0/((float)sleep_time)));
+    // refresh();
+    usleep(sleep_time);
+    gettimeofday(&time_last_frame, NULL);
+    ////////////////////////////////////////////////////////////////////////////
   }
 
   heap_delete(&move_queue);

@@ -6,6 +6,7 @@
 #include "heap.h"
 #include "region.h"
 #include "character.h"
+#include "pokemon.h"
 
 typedef struct battle {
   Character *pc;
@@ -15,7 +16,7 @@ typedef struct battle {
 
 typedef struct encounter {
   Character *pc;
-  Character *wp;
+  Pokemon *wp;
   int32_t end_encounter;
 } encounter_t;
 

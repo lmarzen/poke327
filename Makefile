@@ -2,11 +2,11 @@ TARGET = poke
 LIBS = -lm -lncurses
 CC = gcc
 CXX = g++
-CFLAGS = -Wall -O2
-# CFLAGS = -Wall -ggdb
+# CFLAGS = -Wall -O2
+CFLAGS = -Wall -g
 
-HEADERS = config.h heap.h region.h pathfinding.h trainer_events.h global_events.h character.h pokedex.h
-OBJECTS = main.o heap.o region.o pathfinding.o trainer_events.o global_events.o character.o pokedex.o
+HEADERS = config.h heap.h region.h pathfinding.h trainer_events.h global_events.h character.h pokedex.h pokemon.h
+OBJECTS = main.o heap.o region.o pathfinding.o trainer_events.o global_events.o character.o pokedex.o pokemon.o
 .PHONY: default all clean
 
 all: $(TARGET)
@@ -18,4 +18,4 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(OBJECTS) $(LIBS) -o $@
 
 clean:
-	rm -f $(TARGET) *.o core vgcore.*
+	rm -f $(TARGET) *.o core *.core.* vgcore.*

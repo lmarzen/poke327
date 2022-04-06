@@ -29,3 +29,6 @@
 03/29/2022 - Converted to C++
 03/30/2022 - Reimplemented Character(Pc/Npc) and Region structs as classes
 03/31/2022 - Added pokedex database parsing
+04/04/2022 - Added wild pokemon encounter placeholder
+             Added pokedex database: pokemon_stats.csv
+04/05/2022 - Added Pokemon Class

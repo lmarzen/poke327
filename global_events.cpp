@@ -218,8 +218,28 @@ void render_battle(battle_t *battle) {
  */
 void render_encounter(encounter_t *encounter) { 
   clear(); 
-  mvprintw(0,0,"***Wild encounter placeholder***");
-  mvprintw(2,0,"Press ESC to exit encounter");
+  mvprintw(0, 0,"***Wild encounter placeholder***");
+  mvprintw(2, 0,"Wild Pokemon Summary:");
+  mvprintw(3, 2, "%s", (*encounter).wp->get_nickname());
+  mvprintw(3, 17, "lvl %d", (*encounter).wp->get_level());
+  mvprintw(4, 2, (*encounter).wp->get_gender() ? "Male" : "Female");
+  mvprintw(4, 17, (*encounter).wp->is_shiny() ? "Shiny" : "Not Shiny");
+  mvprintw(6, 2, "Stats");
+  mvprintw(7, 2, "HP:      %d", (*encounter).wp->get_stat(stat_hp));
+  mvprintw(8, 2, "ATTACK:  %d", (*encounter).wp->get_stat(stat_attack));
+  mvprintw(9, 2, "DEFENSE: %d", (*encounter).wp->get_stat(stat_defense));
+  mvprintw(10,2, "SP. ATK: %d", (*encounter).wp->get_stat(stat_sp_atk));
+  mvprintw(11,2, "SP. DEF: %d", (*encounter).wp->get_stat(stat_sp_def));
+  mvprintw(12,2, "SPEED:   %d", (*encounter).wp->get_stat(stat_speed));
+  mvprintw(6, 17, "IVs");
+  mvprintw(7, 17, "%d", (*encounter).wp->get_iv(stat_hp));
+  mvprintw(8, 17, "%d", (*encounter).wp->get_iv(stat_attack));
+  mvprintw(9, 17, "%d", (*encounter).wp->get_iv(stat_defense));
+  mvprintw(10,17, "%d", (*encounter).wp->get_iv(stat_sp_atk));
+  mvprintw(11,17, "%d", (*encounter).wp->get_iv(stat_sp_def));
+  mvprintw(12,17, "%d", (*encounter).wp->get_iv(stat_speed));
+
+  mvprintw(13,0,"Press ESC to exit encounter");
   refresh();
   return;
 }
@@ -490,7 +510,7 @@ void process_input_nav() {
       // do nothing
       no_op = 0;
     } else if (CTRL_ENTER_BLDG) {
-      terrain_t standing_on = r->get_ter(pc->get_x(), pc->get_y());
+      terrain_t standing_on = r->get_ter(pc->get_i(), pc->get_j());
       if (standing_on == ter_center) {
         center_driver();
         render_region(r);

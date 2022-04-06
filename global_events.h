@@ -5,6 +5,7 @@
 
 #include "region.h"
 #include "trainer_events.h"
+#include "pokemon.h"
 
 void pc_next_region(int32_t to_rx,   int32_t to_ry, 
                     int32_t from_rx, int32_t from_ry);

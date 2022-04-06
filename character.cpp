@@ -133,7 +133,7 @@ void Character::process_movement_turn() {
 * Player Character (Pc) Sub-Class
 *******************************************************************************/
 /*
- * Player character contructor
+ * Player Character contructor
  */
 Pc::Pc(int32_t r_x, int32_t r_y) {
   ch    = CHAR_PC;
@@ -181,7 +181,9 @@ void Pc::set_quit_game(bool q) {
 /*******************************************************************************
 * Non-Player Character (Npc) Sub-Class
 *******************************************************************************/
-// (placeholder)
+/*
+ * Non-Player Character contructor
+ */
 Npc::Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime) {
   pos_i = i;
   pos_j = j;

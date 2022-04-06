@@ -73,6 +73,8 @@ bool check_trainer_battle(int32_t to_i, int32_t to_j) {
 void encounter_driver(Pc *pc) {
   encounter_t encounter;
   encounter.pc = pc;
+  Pokemon wild_poke = Pokemon();
+  encounter.wp = &wild_poke;
   encounter.end_encounter = 0;
 
   // encounter.wp = random
@@ -80,7 +82,8 @@ void encounter_driver(Pc *pc) {
     render_encounter(&encounter);
     process_input_encounter(&encounter);
   }
-
+  
+  //delete wp;
   return;
 }
 
@@ -92,9 +95,10 @@ bool check_wild_encounter() {
   // get pointer to present region from global variables
   Region *r = region_ptr[pc->get_x()][pc->get_y()];
   // 10% chance of wild encounter if player moved to tall grass
-  int32_t randy = rand() % 9;
+  int32_t randy = rand() % POKEMON_ENCOUNTER_RATE;
 
-  if ((r->get_ter(pc->get_i(),pc->get_j()) == ter_grass) && (randy == 0)) {
+  terrain_t standing_on = r->get_ter(pc->get_i(), pc->get_j());
+  if ((standing_on == ter_grass) && (randy == 0)) {
     encounter_driver(pc);
     return true;
   }
@@ -102,7 +106,8 @@ bool check_wild_encounter() {
 }
 
 /*
- * Performs the all the nessesary checks to ensure a location is a valid spot to move to.
+ * Performs the all the nessesary checks to ensure a location is a valid spot to
+ * move to.
  * Returns 1 if the location is valid, 0 otherwise.
  */
 bool is_valid_location(int32_t to_i, int32_t to_j, trainer_t tnr) {
@@ -131,11 +136,14 @@ bool is_valid_location(int32_t to_i, int32_t to_j, trainer_t tnr) {
 }
 
 /*
- * Performs the all the nessesary checks to ensure a location is a valid spot to move to
- * except if the player is in that location.
- * Returns true if the location is valid or player exists there, false otherwise.
+ * Performs the all the nessesary checks to ensure a location is a valid spot to
+ * move to except if the player is in that location.
+ * 
+ * Returns true if the location is valid or player exists there, false 
+ * otherwise.
  */
-bool is_valid_gradient(int32_t to_i, int32_t to_j, int32_t dist_map[MAX_ROW][MAX_COL]) {
+bool is_valid_gradient(int32_t to_i, int32_t to_j, 
+                       int32_t dist_map[MAX_ROW][MAX_COL]) {
   // get pointer to present region from global variables
   Region *r = region_ptr[pc->get_x()][pc->get_y()];
   
@@ -263,6 +271,10 @@ int32_t process_pc_move_attempt(direction_t dir) {
     pc->pos_i += dir_offsets[dir][0];
     pc->pos_j += dir_offsets[dir][1];
 
+    if (check_wild_encounter()) {
+      return 0;
+    }
+
     if (pc->pos_i == 0) {
       ++(pc->reg_y);
     } else if (pc->pos_i == MAX_ROW - 1) {
@@ -272,11 +284,6 @@ int32_t process_pc_move_attempt(direction_t dir) {
     } else if (pc->pos_j == MAX_COL - 1) {
       ++(pc->reg_x);
     }
-
-    if (check_wild_encounter()) {
-      return 0;
-    }
-
     return 0;
   }
   
