@@ -21,6 +21,8 @@
 #define CTRL_SCROLL_DOWN    key == KEY_DOWN
 #define CTRL_QUIT_GAME      key == 'Q'
 #define CTRL_LEAVE_BATTLE   key == 27 // ESC
+#define CTRL_OPEN_BAG       key == 'B'
+#define CTRL_CLOSE_BAG      key == 27 // ESC
 
 // Will print parsing debug info and parsed data to terminal if defined
 // #define VERBOSE_POKEDEX
@@ -43,11 +45,11 @@
 #define POKEDEX_TYPE_NAMES_PATH      pokedex/data/csv/type_names.csv
 // pokedex database entry count 
 // number of entries = line count - 1; because there is a header line
-#define POKEDEX_POKEMON_ENTRIES         1092   // 1093 total lines
+#define POKEDEX_POKEMON_ENTRIES         386    // 386 pokemon (Gen I-III)
 #define POKEDEX_MOVES_ENTRIES           844    // 845 total lines
-#define POKEDEX_POKEMON_MOVES_ENTRIES   15836  // move_method_id=1,
-                                               // version_group_id=18
-#define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total linesQ
+#define POKEDEX_POKEMON_MOVES_ENTRIES   3971   // move_method_id=1,
+                                               // version_group_id=5 (Gen I-III)
+#define POKEDEX_POKEMON_SPECIES_ENTRIES 898    // 899 total lines
 #define POKEDEX_POKEMON_STATS_ENTRIES   6552   // 6553 total lines
 #define POKEDEX_EXPERIENCE_ENTRIES      600    // 601 total lines
 #define POKEDEX_TYPE_NAMES_ENTRIES      20     // 20 english types
@@ -113,13 +115,16 @@
 
 // The number of trainers that will populate each region
 #define NUM_TRAINERS -1 // -1 is used to indicate random number of trainers
-#define MIN_TRAINERS 6
-#define MAX_TRAINERS 12
+#define MIN_TRAINERS 4
+#define MAX_TRAINERS 8
 
 #define POKEMON_MIN_LEVEL 1
 #define POKEMON_MAX_LEVEL 100
 // rates below are 1 in X odds
 #define POKEMON_ENCOUNTER_RATE 10
 #define POKEMON_SHINY_RATE 8192
+
+// maximum items per item type
+#define MAX_ITEMS 999
 
 #endif

@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <climits>
+#include <vector>
 #include "config.h"
+#include "item.h"
 
 typedef enum trainer {
   tnr_pc,
@@ -58,11 +60,12 @@ class Character {
   protected:
     int32_t pos_i, pos_j;
     trainer_t tnr;
-    int32_t movetime = 0;
+    int32_t movetime;
     char ch = CHAR_UNDEFINED;
     int32_t color = CHAR_COLOR_UNDEFINED;
     bool defeated = false;
     direction_t dir;
+    std::vector<bag_slot_t> bag;
     
   public:
     int32_t get_movetime();
@@ -75,6 +78,11 @@ class Character {
     bool is_defeated();
     void set_defeated(bool d);
     void process_movement_turn();
+    int32_t num_in_bag(item_t i);
+    void remove_item_from_bag(item_t i);
+    void add_item_to_bag(item_t i, int32_t cnt);
+    int32_t num_bag_slots();
+    bag_slot_t peek_bag_slot(int32_t index);
 
   friend void move_along_gradient(Character *c, 
                                   int32_t dist_map[MAX_ROW][MAX_COL]);
@@ -93,8 +101,6 @@ class Pc : public Character {
     int32_t get_y();
     bool is_quit_game();
     void set_quit_game(bool q);
-
-    static void move_pc_func(Pc *c);
 
   friend int32_t process_pc_move_attempt(direction_t dir);
   friend void pc_next_region(int32_t to_rx,   int32_t to_ry, 

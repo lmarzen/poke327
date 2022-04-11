@@ -50,6 +50,7 @@ void init_pd_pokemon() {
   int32_t failed = 0;
   bool success = false;
   int32_t i = 0;
+  char *tmp[9];
 
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_PATH);
 
@@ -82,15 +83,28 @@ void init_pd_pokemon() {
         std::cout << line;
         #endif
 
-        pd_pokemon[i].id = atoi(next_token(line, ','));
-        strncpy(pd_pokemon[i].identifier, next_token(NULL, ','), 30);
-        pd_pokemon[i].species_id = atoi(next_token(NULL, ','));
-        pd_pokemon[i].height = atoi(next_token(NULL, ','));
-        pd_pokemon[i].weight = atoi(next_token(NULL, ','));
-        pd_pokemon[i].base_experience = atoi(next_token(NULL, ','));
-        pd_pokemon[i].order = atoi(next_token(NULL, ','));
-        pd_pokemon[i].is_default = atoi(next_token(NULL, ','));
-        ++i;
+        tmp[0] = next_token(line, ',');
+        tmp[1] = next_token(NULL, ',');
+        tmp[2] = next_token(NULL, ',');
+        tmp[3] = next_token(NULL, ',');
+        tmp[4] = next_token(NULL, ',');
+        tmp[5] = next_token(NULL, ',');
+        tmp[6] = next_token(NULL, ',');
+        tmp[7] = next_token(NULL, ',');
+        tmp[8] = next_token(NULL, ',');
+
+        if (atoi(tmp[0]) <= 386) {
+          // we only care about cols where id <= 386 (Gen I-III)
+          pd_pokemon[i].id = atoi(tmp[0]);
+          strncpy(pd_pokemon[i].identifier, tmp[1], 30);
+          pd_pokemon[i].species_id = atoi(tmp[2]);
+          pd_pokemon[i].height = atoi(tmp[3]);
+          pd_pokemon[i].weight = atoi(tmp[4]);
+          pd_pokemon[i].base_experience = atoi(tmp[5]);
+          pd_pokemon[i].order = atoi(tmp[6]);
+          pd_pokemon[i].is_default = atoi(tmp[7]);
+          ++i;
+        }
       }
     } else {
       ++failed;
@@ -241,8 +255,8 @@ void init_pd_pokemon_moves() {
         tmp[4] = next_token(NULL, ',');
         tmp[5] = next_token(NULL, ',');
 
-        if (!strcmp(tmp[1],"18") && !strcmp(tmp[3],"1")) {
-          // we only care about cols where version_group_id == 18 and
+        if (!strcmp(tmp[1],"5") && !strcmp(tmp[3],"1")) {
+          // we only care about cols where version_group_id == 5 and
           // pokemon_move_method_id == 1
           pd_pokemon_moves[i].pokemon_id = *tmp[0] ? atoi(tmp[0]) : -1;
           // pd_pokemon_moves[i].version_group_id = *tmp[1] ? atoi(tmp) : -1;

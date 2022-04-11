@@ -10,6 +10,7 @@
 #include "region.h"
 #include "trainer_events.h"
 #include "global_events.h"
+#include "item.h"
 
 extern Region *region_ptr[WORLD_SIZE][WORLD_SIZE];
 extern Pc *pc;
@@ -295,7 +296,8 @@ void render_tnr_overlay(int32_t scroller_pos) {
   mvprintw(0,0,"Nearby Trainers");
   attroff(A_BOLD);
 
-  for (i = 0; (i < static_cast<int>(r->get_npcs()->size())) && (i < MAX_ROW); 
+  for (i = 0; 
+       (i < static_cast<int32_t>(r->get_npcs()->size())) && (i < MAX_ROW); 
        i++) {
     Character *c = &r->get_npcs()->at(scroller_pos + i);
 
@@ -326,7 +328,35 @@ void render_tnr_overlay(int32_t scroller_pos) {
     
   }
   
-  mvprintw(i + 2,0,"Press ESC to close overlay");
+  mvprintw(i + 2,0,"Press ESC to close trainer overlay");
+  refresh();
+  return;
+}
+
+/*
+ * Renders the players bag to the screen
+ */
+void render_bag(int32_t page_index, int32_t scroller_pos) { 
+  int32_t i;
+  bag_slot_t s;
+
+  clear(); 
+  attron(A_BOLD);
+  mvprintw(0,0,"Bag");
+  attroff(A_BOLD);
+
+  for (i = 0; (i < pc->num_bag_slots() && i < MAX_ROW); ++i) {
+    s = pc->peek_bag_slot(i + page_index);
+    if (i == scroller_pos - page_index) {
+      mvaddch(i + 1,0, '>');
+    } else {
+      mvaddch(i + 1,0, ACS_VLINE);
+    }
+    
+    mvprintw(i + 1, 2, "%3dx %s", s.cnt, item_name_txt[s.item]);
+  }
+
+  mvprintw(i + 2,0,"Press ESC to close bag");
   refresh();
   return;
 }
@@ -432,13 +462,51 @@ void process_input_tnr_overlay(int32_t *scroller_pos, int32_t *close_overlay) {
       *close_overlay = 1;
       no_op = 0;
     } else if (CTRL_SCROLL_DOWN) {
-      if (*scroller_pos < (static_cast<int>(r->get_npcs()->size()) - MAX_ROW)) {
+      if (*scroller_pos < (static_cast<int32_t>(r->get_npcs()->size()) - MAX_ROW)) {
         ++(*scroller_pos);
         no_op = 0;
       }
     } else if (CTRL_SCROLL_UP) {
       if (*scroller_pos > 0) {
         --(*scroller_pos);
+        no_op = 0;
+      }
+    } else if (CTRL_QUIT_GAME) {
+      pc->set_quit_game(true);
+      no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in the player bag menu
+ */
+void process_input_bag(int32_t *page_index, int32_t *scroller_pos, 
+                       int32_t *close_bag) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_CLOSE_BAG) {
+      *close_bag = 1;
+      no_op = 0;
+    } else if (CTRL_SCROLL_DOWN) {
+      if (*scroller_pos < pc->num_bag_slots() - 1) {
+        ++(*scroller_pos);
+        if (*scroller_pos > *page_index + MAX_ROW - 1) {
+          ++(*page_index);
+        }
+        no_op = 0;
+      }
+    } else if (CTRL_SCROLL_UP) {
+      if (*scroller_pos > 0) {
+        --(*scroller_pos);
+        if (*scroller_pos < *page_index) {
+          --(*page_index);
+        }
         no_op = 0;
       }
     } else if (CTRL_QUIT_GAME) {
@@ -535,6 +603,11 @@ void process_input_nav() {
       }
     } else if (CTRL_TNR_LIST_SHOW) {
       tnr_overlay_driver();
+      render_region(r);
+      if (pc->is_quit_game())
+        no_op = 0;
+    } else if (CTRL_OPEN_BAG) {
+      bag_region_driver();
       render_region(r);
       if (pc->is_quit_game())
         no_op = 0;

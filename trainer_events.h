@@ -31,6 +31,8 @@ bool is_valid_gradient(int32_t to_i, int32_t to_j,
 void move_along_gradient(Character *c, int32_t dist_map[MAX_ROW][MAX_COL]);
 void step_all_movetimes(Region *r, int32_t amount);
 int32_t process_pc_move_attempt(direction_t dir);
+void bag_region_driver();
+void bag_battle_driver();
 
 
 #endif

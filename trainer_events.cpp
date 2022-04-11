@@ -83,7 +83,6 @@ void encounter_driver(Pc *pc) {
     process_input_encounter(&encounter);
   }
   
-  //delete wp;
   return;
 }
 
@@ -288,4 +287,23 @@ int32_t process_pc_move_attempt(direction_t dir) {
   }
   
   return 1;
+}
+
+/*
+ * Drives trainer bag interactions
+ */
+void bag_region_driver() {
+  int32_t close_bag = 0;
+  int32_t scroller_pos = 0;
+  int32_t page_index = 0;
+
+  while (!close_bag && !(pc->is_quit_game())) {
+    render_bag(page_index, scroller_pos);
+    process_input_bag(&page_index, &scroller_pos, &close_bag);
+  }
+  return;
+
+}
+void bag_battle_driver() {
+
 }

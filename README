@@ -8,6 +8,8 @@ global_events.cpp
 global_events.h
 heap.c
 heap.h
+item.cpp
+item.h
 main.cpp
 Makefile
 pathfinding.cpp
@@ -28,7 +30,8 @@ Regions are procedurally generated and populated. Controls can be used to
 navigate regions. Trainer battles are initiated if the player and another 
 trainer come into contact. Wild pokemon encounters have a chance of happening
 each step the player takes in tall grass. Pokedex database files will be 
-searched for and parsed. Written in C++.
+searched for and parsed. Game includes all pokemon in Generations I-III. Written
+in C++.
 
 Key
 ---

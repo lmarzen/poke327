@@ -96,12 +96,11 @@ void Pokemon::generate_ivs() {
   return;
 }
 /*
- * Helper method to calculate and update a pokemon's stats
- * Called when initializing a pokemon or after level up
+ * Helper method to lookup and update a pokemon's stats
+ * Called when initializing a pokemon
  */
-void Pokemon::calculate_stats() {
+void Pokemon::lookup_base_stats() {
   // Lookup Base Stats
-  int32_t base_stats[6] = {0};
   for (int32_t i = 0; i < POKEDEX_POKEMON_STATS_ENTRIES; ++i) {
     if (pd_pokemon_stats[i].pokemon_id == pd_entry->id) {
       // we assume that the pokemon_stats.csv lists stat ids in order for one 
@@ -112,7 +111,13 @@ void Pokemon::calculate_stats() {
       break;
     }
   }
-
+  return;
+}
+/*
+ * Helper method to calculate and update a pokemon's stats
+ * Called when initializing a pokemon and after level up
+ */
+void Pokemon::calculate_stats() {
   // Calculate HP
   stats[stat_hp] = ( ((base_stats[stat_hp] + ivs[stat_hp]) * 2 * level) / 100 ) 
                    + level + 10;
@@ -136,6 +141,7 @@ Pokemon::Pokemon() {
   generate_level();
   populate_moveset();
   generate_ivs();
+  lookup_base_stats();
   calculate_stats();
 
   exp = 0;
@@ -161,6 +167,9 @@ int32_t Pokemon::get_exp() {
 }
 pd_move_t* Pokemon::get_move(int32_t move_slot) {
   return moveset[move_slot];
+}
+int32_t Pokemon::get_base_stat(stat_id_t stat_id) {
+  return base_stats[stat_id];
 }
 int32_t Pokemon::get_stat(stat_id_t stat_id) {
   return stats[stat_id];

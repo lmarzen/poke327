@@ -25,6 +25,7 @@ class Pokemon {
   int32_t level;
   int32_t exp;
   pd_move_t *moveset[4];
+  int32_t base_stats[6];
   int32_t stats[6];
   int32_t ivs[6];
   int32_t current_hp;
@@ -34,6 +35,7 @@ class Pokemon {
   void generate_level();
   void populate_moveset();
   void generate_ivs();
+  void lookup_base_stats();
   void calculate_stats();
 
   public:
@@ -44,6 +46,7 @@ class Pokemon {
     int32_t get_level();
     int32_t get_exp();
     pd_move_t* get_move(int32_t move_slot);
+    int32_t get_base_stat(stat_id_t stat_id);
     int32_t get_stat(stat_id_t stat_id);
     int32_t get_iv(stat_id_t stat_id);
     gender_t get_gender();

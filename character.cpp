@@ -127,6 +127,60 @@ void Character::process_movement_turn() {
   }
   return;
 }
+int32_t Character::num_in_bag(item_t i) {
+  for (auto it = bag.begin(); it != bag.end(); ++it) {
+    if (it->item == i) {
+      return it->cnt;
+    }
+  }
+  return 0;
+}
+void Character::remove_item_from_bag(item_t i) {
+  for (auto it = bag.begin(); it != bag.end(); ++it) {
+    if (it->item == i) {
+      --it->cnt;
+      if (it->cnt < 1) {
+        bag.erase(it);
+      }
+      return;
+    }
+  }
+
+  return;
+}
+void Character::add_item_to_bag(item_t i, int32_t cnt) {
+  // check if count is a positive number that is less than MAX_ITEMS
+  // check if bag_slot already exists
+  //   if (bag_slot exists)
+  //     add cnt to bag_slot
+  //     return
+  // create new bag_slot
+  
+  if (cnt < 1 || cnt > MAX_ITEMS) {
+    return;
+  }
+
+  for (auto it = bag.begin(); it != bag.end(); ++it) {
+    if (it->item == i) {
+      it->cnt += cnt;
+      if (cnt > MAX_ITEMS) {
+        it->cnt = MAX_ITEMS;
+      }
+      return;
+    }
+  }
+
+  bag_slot_t new_bag_slot;
+  new_bag_slot.item = i;
+  new_bag_slot.cnt = cnt;
+  bag.push_back(new_bag_slot);
+}
+int32_t Character::num_bag_slots() {
+  return bag.size();
+}
+bag_slot_t Character::peek_bag_slot(int32_t index) {
+  return bag[index];
+}
 
 
 /*******************************************************************************
@@ -141,6 +195,7 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   tnr   = tnr_pc;
   reg_x = r_x;
   reg_y = r_y;
+  movetime = 0;
 
   // get pointer to present region from global variables
   Region *r = region_ptr[reg_x][reg_y];
@@ -161,6 +216,12 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
     }
   }
   movetime = turn_times[r->get_ter(pos_i, pos_j)][tnr];
+
+
+  // give the player starting items
+  add_item_to_bag(item_potion, 10);
+  add_item_to_bag(item_revive, 10);
+  add_item_to_bag(item_pokeball, 10);
 }
 
 int32_t Pc::get_x() {
@@ -176,7 +237,6 @@ void Pc::set_quit_game(bool q) {
   quit_game = q;
   return;
 }
-
 
 /*******************************************************************************
 * Non-Player Character (Npc) Sub-Class
