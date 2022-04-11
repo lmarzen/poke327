@@ -73,6 +73,8 @@ Scroll Up         : KEY_UP
 Scroll Down       : KEY_DOWN
 Quit Game         : 'Q'
 Leave Battle      : ESC
+Open Bag          : 'B'
+Close Bag         : ESC
 
 Switches
 ---
