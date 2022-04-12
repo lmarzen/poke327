@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <ncurses.h>
 
 #include "character.h"
 #include "region.h"
@@ -181,6 +182,16 @@ int32_t Character::num_bag_slots() {
 bag_slot_t Character::peek_bag_slot(int32_t index) {
   return bag[index];
 }
+/*
+ * Return 1 if pokemon was successfully added to the party, 0 otherwise
+ */
+int32_t Character::add_pokemon(Pokemon *p) {
+  if (party.size() < 6) {
+    party.push_back(*p);
+    return 1;
+  }
+  return 0 ;
+}
 
 
 /*******************************************************************************
@@ -235,6 +246,29 @@ bool Pc::is_quit_game() {
 }
 void Pc::set_quit_game(bool q) {
   quit_game = q;
+  return;
+}
+
+void Pc::pick_starter_driver() {
+  int32_t scroller_pos = 0;
+  int32_t selected_pokemon = 0;
+  Pokemon p1 = Pokemon();
+  Pokemon p2 = Pokemon();
+  Pokemon p3 = Pokemon();
+
+  while (!selected_pokemon) {
+    render_pick_starter(scroller_pos, &p1, &p2, &p3);
+    process_input_pick_starter(&scroller_pos, &selected_pokemon);
+  }
+
+  if (selected_pokemon == 1) {
+    add_pokemon(&p1);
+  } else if (selected_pokemon == 2) {
+    add_pokemon(&p2);
+  } else if (selected_pokemon == 3) {
+    add_pokemon(&p3);
+  }
+
   return;
 }
 

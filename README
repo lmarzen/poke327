@@ -75,6 +75,7 @@ Quit Game         : 'Q'
 Leave Battle      : ESC
 Open Bag          : 'B'
 Close Bag         : ESC
+Select            : Enter
 
 Switches
 ---

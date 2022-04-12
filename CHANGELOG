@@ -34,3 +34,4 @@
 04/05/2022 - Added Pokemon Class
 04/06/2022 - Fixed bug in file parsing that caused crashes in some environments.
 04/10/2022 - Added Items and Bag menu(w/ scroller!)
+04/11/2022 - Added pokemon parties and starter selection

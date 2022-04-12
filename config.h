@@ -23,6 +23,7 @@
 #define CTRL_LEAVE_BATTLE   key == 27 // ESC
 #define CTRL_OPEN_BAG       key == 'B'
 #define CTRL_CLOSE_BAG      key == 27 // ESC
+#define CTRL_SELECT         key == 10 // ENTER
 
 // Will print parsing debug info and parsed data to terminal if defined
 // #define VERBOSE_POKEDEX

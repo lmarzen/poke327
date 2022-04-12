@@ -6,6 +6,7 @@
 #include <vector>
 #include "config.h"
 #include "item.h"
+#include "pokemon.h"
 
 typedef enum trainer {
   tnr_pc,
@@ -66,6 +67,7 @@ class Character {
     bool defeated = false;
     direction_t dir;
     std::vector<bag_slot_t> bag;
+    std::vector<Pokemon> party;
     
   public:
     int32_t get_movetime();
@@ -83,6 +85,7 @@ class Character {
     void add_item_to_bag(item_t i, int32_t cnt);
     int32_t num_bag_slots();
     bag_slot_t peek_bag_slot(int32_t index);
+    int32_t add_pokemon(Pokemon *p);
 
   friend void move_along_gradient(Character *c, 
                                   int32_t dist_map[MAX_ROW][MAX_COL]);
@@ -101,6 +104,7 @@ class Pc : public Character {
     int32_t get_y();
     bool is_quit_game();
     void set_quit_game(bool q);
+    void pick_starter_driver();
 
   friend int32_t process_pc_move_attempt(direction_t dir);
   friend void pc_next_region(int32_t to_rx,   int32_t to_ry, 

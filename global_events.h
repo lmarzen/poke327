@@ -15,9 +15,13 @@ void init_terminal();
 void render_region(Region *r);
 void render_battle(battle_t *battle);
 void render_bag(int32_t page_index, int32_t scroller_pos);
+void render_pick_starter(int32_t scroller_pos, 
+                         Pokemon *p1, Pokemon *p2, Pokemon *p3);
 void process_input_battle(battle_t *battle);
 void process_input_bag(int32_t *page_index, int32_t *scroller_pos, 
                        int32_t *close_bag);
+void process_input_pick_starter(int32_t *scroller_pos, 
+                                int32_t *selected_pokemon);
 void render_encounter(encounter_t *encounter);
 void process_input_encounter(encounter_t *encounter);
 void process_input_nav();

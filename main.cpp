@@ -103,6 +103,7 @@ int main (int argc, char *argv[])
   new_region->populate(numtrainers_opt);
   region_ptr[WORLD_SIZE/2][WORLD_SIZE/2] = new_region;
   pc = new Pc(WORLD_SIZE/2, WORLD_SIZE/2);
+  pc->pick_starter_driver();
   
   heap_t move_queue;
   Character *c;

@@ -362,6 +362,32 @@ void render_bag(int32_t page_index, int32_t scroller_pos) {
 }
 
 /*
+ * Renders the pick starter menu to screen
+ */
+void render_pick_starter(int32_t scroller_pos, 
+                         Pokemon *p1, Pokemon *p2, Pokemon *p3) { 
+
+  clear(); 
+  attron(A_BOLD);
+  mvprintw(0,0,"Choose a Starter Pokemon");
+  attroff(A_BOLD);
+  
+
+  mvaddch(2,0, ACS_VLINE);
+  mvprintw(2, 2, "%s  lvl %d", p1->get_nickname(), p1->get_level());
+  mvaddch(3,0, ACS_VLINE);
+  mvprintw(3, 2, "%s  lvl %d", p2->get_nickname(), p2->get_level());
+  mvaddch(4,0, ACS_VLINE);
+  mvprintw(4, 2, "%s  lvl %d", p3->get_nickname(), p3->get_level());
+
+  mvaddch(2 + scroller_pos,0, '>');
+
+  mvprintw(6,0,"Press Enter to select a pokemon");
+  refresh();
+  return;
+}
+
+/*
  * Process user input while in a battle
  */
 void process_input_battle(battle_t *battle) {
@@ -512,6 +538,34 @@ void process_input_bag(int32_t *page_index, int32_t *scroller_pos,
     } else if (CTRL_QUIT_GAME) {
       pc->set_quit_game(true);
       no_op = 0;
+    }
+  }
+  return;
+}
+
+/*
+ * Process user input while in the pick starter menu
+ */
+void process_input_pick_starter(int32_t *scroller_pos, 
+                                int32_t *selected_pokemon) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_SCROLL_DOWN) {
+      if (*scroller_pos < 2) {
+        ++(*scroller_pos);
+        no_op = 0;
+      }
+    } else if (CTRL_SCROLL_UP) {
+      if (*scroller_pos > 0) {
+        --(*scroller_pos);
+        no_op = 0;
+      }
+    } else if (CTRL_SELECT) {
+      *selected_pokemon = *scroller_pos + 1;
     }
   }
   return;
