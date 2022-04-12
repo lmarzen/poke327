@@ -35,3 +35,7 @@
 04/06/2022 - Fixed bug in file parsing that caused crashes in some environments.
 04/10/2022 - Added Items and Bag menu(w/ scroller!)
 04/11/2022 - Added pokemon parties and starter selection
+04/12/2022 - Updated controls
+             Fixed bug that selecting a starter would not show next screen
+             
+             

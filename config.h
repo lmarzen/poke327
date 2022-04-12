@@ -4,26 +4,24 @@
 #include <ncurses.h>
 
 // Controls
-#define CTRL_N     key == 'k' || key == '8'
-#define CTRL_NE    key == 'u' || key == '9'
-#define CTRL_E     key == 'l' || key == '6'
-#define CTRL_SE    key == 'n' || key == '3'
-#define CTRL_S     key == 'j' || key == '2'
-#define CTRL_SW    key == 'b' || key == '1'
-#define CTRL_W     key == 'h' || key == '4'
-#define CTRL_NW    key == 'y' || key == '7'
-#define CTRL_PASS  key == ' ' || key == '5' || key == '.'
-#define CTRL_ENTER_BLDG     key == '>'
-#define CTRL_EXIT_BLDG      key == '<'
-#define CTRL_TNR_LIST_SHOW  key == 't'
-#define CTRL_TNR_LIST_HIDE  key == 27 // ESC
-#define CTRL_SCROLL_UP      key == KEY_UP
-#define CTRL_SCROLL_DOWN    key == KEY_DOWN
-#define CTRL_QUIT_GAME      key == 'Q'
-#define CTRL_LEAVE_BATTLE   key == 27 // ESC
-#define CTRL_OPEN_BAG       key == 'B'
-#define CTRL_CLOSE_BAG      key == 27 // ESC
-#define CTRL_SELECT         key == 10 // ENTER
+#define CTRL_UP            key == 'k' || key == '8' || key == KEY_UP
+#define CTRL_UP_RIGHT      key == 'u' || key == '9'
+#define CTRL_RIGHT         key == 'l' || key == '6' || key == KEY_RIGHT
+#define CTRL_DOWN_RIGHT    key == 'n' || key == '3'
+#define CTRL_DOWN          key == 'j' || key == '2' || key == KEY_DOWN
+#define CTRL_DOWN_LEFT     key == 'b' || key == '1'
+#define CTRL_LEFT          key == 'h' || key == '4' || key == KEY_LEFT
+#define CTRL_UP_LEFT       key == 'y' || key == '7'
+#define CTRL_PASS          key == ' ' || key == '5' || key == '.'
+#define CTRL_ENTER_BLDG    key == '>'
+#define CTRL_EXIT_BLDG     key == '<'
+#define CTRL_TNR_LIST_SHOW key == 't'
+#define CTRL_TNR_LIST_HIDE key == 27 /*ESC*/ || key =='t'
+#define CTRL_QUIT_GAME     key == 'Q'
+#define CTRL_LEAVE_BATTLE  key == 27 /*ESC*/
+#define CTRL_OPEN_BAG      key == 'B'
+#define CTRL_CLOSE_BAG     key == 27 /*ESC*/ || key =='B'
+#define CTRL_SELECT        key == 10 /*ENTER*/
 
 // Will print parsing debug info and parsed data to terminal if defined
 // #define VERBOSE_POKEDEX

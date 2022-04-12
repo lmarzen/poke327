@@ -172,9 +172,9 @@ int main (int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////
   }
 
+  endwin();
   heap_delete(&move_queue);
   free_all_regions();
-  endwin();
 
   return 0;
 }

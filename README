@@ -56,25 +56,23 @@ n  Random Walker
 
 Controls
 ---
-Move North        : 'k' or '8'
-Move North East   : 'u' or '9'
-Move East         : 'l' or '6'
-Move South East   : 'n' or '3'
-Move South        : 'j' or '2'
-Move South West   : 'b' or '1'
-Move West         : 'h' or '4'
-Move North West   : 'y' or '7'
+Up                : 'k' or '8' or KEY_UP
+Up-Right          : 'u' or '9'
+Right             : 'l' or '6' or KEY_RIGHT
+Down-Right        : 'n' or '3'
+Down              : 'j' or '2' or KEY_DOWN
+Down-Left         : 'b' or '1'
+Left              : 'h' or '4' or KEY_LEFT
+Up-Left           : 'y' or '7'
 Pass Turn         : ' ' or '5' or '.'
 Enter Building    : '>'
 Exit Building     : '<'
 Show Trainer List : 't'
-Hide Trainer List : ESC
-Scroll Up         : KEY_UP
-Scroll Down       : KEY_DOWN
+Hide Trainer List : ESC or 't'
 Quit Game         : 'Q'
 Leave Battle      : ESC
 Open Bag          : 'B'
-Close Bag         : ESC
+Close Bag         : ESC or 'B'
 Select            : Enter
 
 Switches

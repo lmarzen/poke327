@@ -507,3 +507,7 @@ void Region::close_W_exit(){
 std::vector<Character>* Region::get_npcs() {
   return &npc_arr;
 }
+Region::~Region() {
+  npc_arr.clear();
+  return;
+}

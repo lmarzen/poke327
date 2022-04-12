@@ -135,19 +135,15 @@ void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr) {
 /*
  * Free all memomry allocated to regions
  */
-// TODO: fix
 void free_all_regions() {
-  return;
-  /*
   for (int32_t i = 0; i < WORLD_SIZE; i++) {
     for (int32_t j = 0; j < WORLD_SIZE; j++) {
       if (region_ptr[i][j] != NULL) {
-        free(region_ptr[i][j]->npc_arr);
-        free(region_ptr[i][j]);
+        delete region_ptr[i][j];
       }
     }
   }
-  */
+  return;
 }
 
 /*
@@ -487,12 +483,12 @@ void process_input_tnr_overlay(int32_t *scroller_pos, int32_t *close_overlay) {
     if (CTRL_TNR_LIST_HIDE) {
       *close_overlay = 1;
       no_op = 0;
-    } else if (CTRL_SCROLL_DOWN) {
+    } else if (CTRL_DOWN) {
       if (*scroller_pos < (static_cast<int32_t>(r->get_npcs()->size()) - MAX_ROW)) {
         ++(*scroller_pos);
         no_op = 0;
       }
-    } else if (CTRL_SCROLL_UP) {
+    } else if (CTRL_UP) {
       if (*scroller_pos > 0) {
         --(*scroller_pos);
         no_op = 0;
@@ -519,7 +515,7 @@ void process_input_bag(int32_t *page_index, int32_t *scroller_pos,
     if (CTRL_CLOSE_BAG) {
       *close_bag = 1;
       no_op = 0;
-    } else if (CTRL_SCROLL_DOWN) {
+    } else if (CTRL_DOWN) {
       if (*scroller_pos < pc->num_bag_slots() - 1) {
         ++(*scroller_pos);
         if (*scroller_pos > *page_index + MAX_ROW - 1) {
@@ -527,7 +523,7 @@ void process_input_bag(int32_t *page_index, int32_t *scroller_pos,
         }
         no_op = 0;
       }
-    } else if (CTRL_SCROLL_UP) {
+    } else if (CTRL_UP) {
       if (*scroller_pos > 0) {
         --(*scroller_pos);
         if (*scroller_pos < *page_index) {
@@ -554,18 +550,19 @@ void process_input_pick_starter(int32_t *scroller_pos,
   flushinp();
   while (no_op)  {
     key = getch();
-    if (CTRL_SCROLL_DOWN) {
+    if (CTRL_DOWN) {
       if (*scroller_pos < 2) {
         ++(*scroller_pos);
         no_op = 0;
       }
-    } else if (CTRL_SCROLL_UP) {
+    } else if (CTRL_UP) {
       if (*scroller_pos > 0) {
         --(*scroller_pos);
         no_op = 0;
       }
     } else if (CTRL_SELECT) {
       *selected_pokemon = *scroller_pos + 1;
+      no_op = 0;
     }
   }
   return;
@@ -625,21 +622,21 @@ void process_input_nav() {
   flushinp();
   while (no_op)  {
     key = getch();
-    if (CTRL_N) {
+    if (CTRL_UP) {
       no_op = process_pc_move_attempt(dir_n);
-    } else if (CTRL_NE) {
+    } else if (CTRL_UP_RIGHT) {
       no_op = process_pc_move_attempt(dir_ne);
-    } else if (CTRL_E) {
+    } else if (CTRL_RIGHT) {
       no_op = process_pc_move_attempt(dir_e);
-    } else if (CTRL_SE) {
+    } else if (CTRL_DOWN_RIGHT) {
       no_op = process_pc_move_attempt(dir_se);
-    } else if (CTRL_S) {
+    } else if (CTRL_DOWN) {
       no_op = process_pc_move_attempt(dir_s);
-    } else if (CTRL_SW) {
+    } else if (CTRL_DOWN_LEFT) {
       no_op = process_pc_move_attempt(dir_sw);
-    } else if (CTRL_W) {
+    } else if (CTRL_LEFT) {
       no_op = process_pc_move_attempt(dir_w);
-    } else if (CTRL_NW) {
+    } else if (CTRL_UP_LEFT) {
       no_op = process_pc_move_attempt(dir_nw);
     } else if (CTRL_PASS) {
       // do nothing
