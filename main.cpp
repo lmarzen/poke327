@@ -54,15 +54,17 @@ int main (int argc, char *argv[])
       init_pd_experience();
     } else if (!strcmp(argv[1], "type_names")) {
       init_pd_type_name();
+    } else if (!strcmp(argv[1], "pokemon_types")) {
+      init_pd_pokemon_types();
     } else {
       std::cout << "Usage: " << argv[0] 
-                << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names]" 
+                << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names|pokemon_types]" 
                 << std::endl;
       return -1;
     }
   } else {
     std::cout << "Usage: " << argv[0] 
-            << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names]" 
+            << " [pokemon|moves|pokemon_moves|pokemon_species|pokemon_stats|experience|type_names|pokemon_types]" 
             << std::endl;
     return -1;
   }
@@ -100,9 +102,13 @@ int main (int argc, char *argv[])
 
   // Allocate memory for and generate the starting region
   Region *new_region = new Region(-1, -1, -1, -1, 1, 1);
-  new_region->populate(numtrainers_opt);
   region_ptr[WORLD_SIZE/2][WORLD_SIZE/2] = new_region;
+  // Pc initialization depends on first region existing
   pc = new Pc(WORLD_SIZE/2, WORLD_SIZE/2);
+  // Region population depends on player existing 
+  // (Trainer difficulty is calculated by which region the pc is in)
+  new_region->populate(numtrainers_opt);
+
   pc->pick_starter_driver();
   
   heap_t move_queue;

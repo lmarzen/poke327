@@ -86,6 +86,8 @@ class Character {
     int32_t num_bag_slots();
     bag_slot_t peek_bag_slot(int32_t index);
     int32_t add_pokemon(Pokemon *p);
+    Pokemon* get_pokemon(int32_t i);
+    int32_t party_size();
 
   friend void move_along_gradient(Character *c, 
                                   int32_t dist_map[MAX_ROW][MAX_COL]);
@@ -99,6 +101,7 @@ class Pc : public Character {
 
   public:
     Pc(int32_t r_x, int32_t r_y);
+    ~Pc();
 
     int32_t get_x();
     int32_t get_y();
@@ -116,6 +119,7 @@ class Npc : public Character {
 
   public:
     Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime);
+    ~Npc();
 };
 
   

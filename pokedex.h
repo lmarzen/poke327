@@ -10,7 +10,7 @@
 
 typedef struct pd_pokemon {
   int32_t id;
-  char    identifier[30];
+  char    identifier[12];
   int32_t species_id;
   int32_t height;
   int32_t weight;
@@ -82,6 +82,12 @@ typedef struct pd_experience {
   int32_t experience;
 } pd_experience_t;
 
+typedef struct pd_pokemon_type {
+  int32_t pokemon_id;
+  int32_t type_id;
+  int32_t slot;
+} pd_pokemon_type_t;
+
 // Global pokedex data
 extern pd_pokemon_t pd_pokemon[POKEDEX_POKEMON_ENTRIES];
 extern pd_move_t pd_moves[POKEDEX_MOVES_ENTRIES];
@@ -90,6 +96,7 @@ extern pd_pokemon_species_t pd_pokemon_species[POKEDEX_POKEMON_SPECIES_ENTRIES];
 extern pd_pokemon_stat_t pd_pokemon_stats[POKEDEX_POKEMON_STATS_ENTRIES];
 extern pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
 extern char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
+extern pd_pokemon_type_t pd_pokemon_types[POKEDEX_POKEMON_TYPES_ENTRIES];
 
 void init_pd_pokemon();
 void init_pd_moves();
@@ -98,6 +105,7 @@ void init_pd_pokemon_species();
 void init_pd_pokemon_stats();
 void init_pd_experience();
 void init_pd_type_name();
+void init_pd_pokemon_types();
 void init_pd();
 
 #endif

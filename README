@@ -73,7 +73,10 @@ Quit Game         : 'Q'
 Leave Battle      : ESC
 Open Bag          : 'B'
 Close Bag         : ESC or 'B'
-Select            : Enter
+View Party        : 'p'
+Close Party       : ESC or 'p'
+Select            : ENTER or '>' or '.'
+Back              : ESC or '<' or ','
 
 Switches
 ---

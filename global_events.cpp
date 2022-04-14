@@ -200,56 +200,156 @@ void render_region(Region *r) {
 }
 
 /*
- * Renders a battle to the screen
- */
-void render_battle(battle_t *battle) { 
-  clear(); 
-  mvprintw(0,0,"***Battle placeholder***");
-  mvprintw(2,0,"Press ESC to exit battle");
-  refresh();
-  return;
-}
-
-/*
  * Renders an encounter to the screen
  */
-void render_encounter(encounter_t *encounter) { 
-  clear(); 
-  mvprintw(0, 0,"***Wild encounter placeholder***");
-  mvprintw(2, 0,"Wild Pokemon Summary:");
-  mvprintw(3, 2, "%s", (*encounter).wp->get_nickname());
-  mvprintw(3, 32, "lvl %d", (*encounter).wp->get_level());
-  mvprintw(4, 2, (*encounter).wp->get_gender() ? "Male" : "Female");
-  mvprintw(4, 17, (*encounter).wp->is_shiny() ? "Shiny" : "Not Shiny");
-  mvprintw(6, 2, "Stats");
-  mvprintw(7, 2, "HP:      %d", (*encounter).wp->get_stat(stat_hp));
-  mvprintw(8, 2, "ATTACK:  %d", (*encounter).wp->get_stat(stat_attack));
-  mvprintw(9, 2, "DEFENSE: %d", (*encounter).wp->get_stat(stat_defense));
-  mvprintw(10,2, "SP. ATK: %d", (*encounter).wp->get_stat(stat_sp_atk));
-  mvprintw(11,2, "SP. DEF: %d", (*encounter).wp->get_stat(stat_sp_def));
-  mvprintw(12,2, "SPEED:   %d", (*encounter).wp->get_stat(stat_speed));
-  mvprintw(6, 17, "IVs");
-  mvprintw(7, 17, "%d", (*encounter).wp->get_iv(stat_hp));
-  mvprintw(8, 17, "%d", (*encounter).wp->get_iv(stat_attack));
-  mvprintw(9, 17, "%d", (*encounter).wp->get_iv(stat_defense));
-  mvprintw(10,17, "%d", (*encounter).wp->get_iv(stat_sp_atk));
-  mvprintw(11,17, "%d", (*encounter).wp->get_iv(stat_sp_def));
-  mvprintw(12,17, "%d", (*encounter).wp->get_iv(stat_speed));
+void render_battle(Pokemon *p_pc, Pokemon *p_opp,
+                   const char* message, bool show_menu,
+                   int32_t scroller_pos, bool selected_fight) { 
+  int32_t color;
+  clear();
 
-  mvprintw(14,2, "Moves");
-  pd_move_t *moveslot_0 = (*encounter).wp->get_move(0);
-  pd_move_t *moveslot_1 = (*encounter).wp->get_move(1);
-  pd_move_t *moveslot_2 = (*encounter).wp->get_move(2);
-  pd_move_t *moveslot_3 = (*encounter).wp->get_move(3);
-  if (moveslot_0 != 0)
-    mvprintw(15,2, "%s", moveslot_0->identifier);
-  if (moveslot_1 != 0)
-    mvprintw(16,2, "%s", moveslot_1->identifier);
-  if (moveslot_2 != 0)
-    mvprintw(17,2, "%s", moveslot_2->identifier);
-  if (moveslot_3 != 0)
-    mvprintw(18,2, "%s", moveslot_3->identifier);
-  mvprintw(20,0,"Press ESC to exit encounter");
+  // OPPONENT POKEMON
+  attron(A_BOLD);
+  mvprintw(2, 2,"%s ", p_opp->get_nickname());
+  attroff(A_BOLD);
+  if (p_opp->get_gender() == gender_male) {
+    attron(COLOR_PAIR(COLOR_BLUE));
+    addch('m');
+    attroff(COLOR_PAIR(COLOR_BLUE));
+  } else {
+    attron(COLOR_PAIR(COLOR_MAGENTA));
+    addch('f');
+    attroff(COLOR_PAIR(COLOR_MAGENTA));
+  }
+  if (p_opp->is_shiny()) {
+    attron(A_BOLD);
+    addch('*');
+    attroff(A_BOLD);
+  }                
+  mvprintw(2, 20 - (p_opp->get_level()/10), "Lv.%d", p_opp->get_level());
+  mvprintw(3, 2, "HP");
+  if (p_opp->get_current_hp() < p_opp->get_stat(stat_hp) / 5) {
+    color = CHAR_COLOR_HEALTH_LOW;
+  } else if (p_opp->get_current_hp() < p_opp->get_stat(stat_hp) / 2) {
+    color = CHAR_COLOR_HEALTH_MED;
+  } else {
+    color = CHAR_COLOR_HEALTH_HIGH;
+  }
+  attron(COLOR_PAIR(color));
+  for (int32_t h = 20 * p_opp->get_current_hp(); h > 0; 
+       h -= p_opp->get_stat(stat_hp)) {
+    addch(CHAR_HEALTH);
+  }
+  attroff(COLOR_PAIR(color));
+
+  // PLAYER POKEMON
+  attron(A_BOLD);
+  mvprintw(7, 2,"%s ", p_pc->get_nickname());
+  attroff(A_BOLD);
+  if (p_opp->get_gender() == gender_male) {
+    attron(COLOR_PAIR(COLOR_BLUE));
+    addch('m');
+    attroff(COLOR_PAIR(COLOR_BLUE));
+  } else {
+    attron(COLOR_PAIR(COLOR_MAGENTA));
+    addch('f');
+    attroff(COLOR_PAIR(COLOR_MAGENTA));
+  }
+  if (p_opp->is_shiny()) {
+    attron(A_BOLD);
+    addch('*');
+    attroff(A_BOLD);
+  }          
+  mvprintw(7, 20 - (p_pc->get_level()/10), "Lv.%d", p_pc->get_level());
+  mvprintw(8, 2, "HP");
+  if (p_pc->get_current_hp() < p_pc->get_stat(stat_hp) / 5) {
+    color = CHAR_COLOR_HEALTH_LOW;
+  } else if (p_pc->get_current_hp() < p_pc->get_stat(stat_hp) / 2) {
+    color = CHAR_COLOR_HEALTH_MED;
+  } else {
+    color = CHAR_COLOR_HEALTH_HIGH;
+  }
+  attron(COLOR_PAIR(color));
+  for (int32_t h = 20 * p_pc->get_current_hp(); h > 0; 
+       h -= p_pc->get_stat(stat_hp)) {
+    addch(CHAR_HEALTH);
+  }
+  attroff(COLOR_PAIR(color));
+  mvprintw(9, 19,"%d/%d", p_pc->get_current_hp(), p_pc->get_stat(stat_hp));
+  mvprintw(10, 2, "EXP");
+  attron(COLOR_PAIR(CHAR_COLOR_EXP));
+  for (int32_t e = 19 * 0 /*TODO: p_pc->get_level_up_exp()*/; e > 0; 
+       e -= p_pc->get_exp()) {
+    addch(CHAR_EXP);
+  }
+  attroff(COLOR_PAIR(CHAR_COLOR_EXP));
+
+  mvprintw(12, 0, message);
+  
+  if (show_menu) {
+    mvaddch(13, 0, (0 == scroller_pos ? '>' : ACS_VLINE));
+    if (!selected_fight) {
+      printw(" Fight");
+    } else if (p_pc->get_num_moves() > 0) {
+      printw(" %s", p_pc->get_move(0)->identifier);
+    }
+    mvaddch(14, 0, (1 == scroller_pos ? '>' : ACS_VLINE));
+    if (!selected_fight) {
+      printw(" Bag");
+    } else if (p_pc->get_num_moves() > 1) {
+      printw(" %s", p_pc->get_move(1)->identifier);
+    }
+    mvaddch(15, 0, (2 == scroller_pos ? '>' : ACS_VLINE));
+      if (!selected_fight) {
+      printw(" Pokemon");
+    } else if (p_pc->get_num_moves() > 2) {
+      printw(" %s", p_pc->get_move(2)->identifier);
+    }
+    mvaddch(16, 0, (3 == scroller_pos ? '>' : ACS_VLINE));
+    if (!selected_fight) {
+      printw(" Run");
+    } else if (p_pc->get_num_moves() > 3) {
+      printw(" %s", p_pc->get_move(3)->identifier);
+    }
+
+    if (selected_fight && p_pc->get_num_moves() > 0) {
+      mvprintw(17, 0, "PP  %d/%d", p_pc->get_current_pp(scroller_pos), 
+                                   p_pc->get_move(scroller_pos)->pp);
+      mvprintw(18, 0, "type/%s", 
+               pd_type_names[p_pc->get_move(scroller_pos)->type_id]);
+    }
+
+  }
+
+  // mvprintw(6, 2, "Stats");
+  // mvprintw(7, 2, "HP:      %d", p_opp->get_stat(stat_hp));
+  // mvprintw(8, 2, "ATTACK:  %d", p_opp->get_stat(stat_attack));
+  // mvprintw(9, 2, "DEFENSE: %d", p_opp->get_stat(stat_defense));
+  // mvprintw(10,2, "SP. ATK: %d", p_opp->get_stat(stat_sp_atk));
+  // mvprintw(11,2, "SP. DEF: %d", p_opp->get_stat(stat_sp_def));
+  // mvprintw(12,2, "SPEED:   %d", p_opp->get_stat(stat_speed));
+  // mvprintw(6, 17, "IVs");
+  // mvprintw(7, 17, "%d", p_opp->get_iv(stat_hp));
+  // mvprintw(8, 17, "%d", p_opp->get_iv(stat_attack));
+  // mvprintw(9, 17, "%d", p_opp->get_iv(stat_defense));
+  // mvprintw(10,17, "%d", p_opp->get_iv(stat_sp_atk));
+  // mvprintw(11,17, "%d", p_opp->get_iv(stat_sp_def));
+  // mvprintw(12,17, "%d", p_opp->get_iv(stat_speed));
+
+  // mvprintw(14,2, "Moves");
+  // pd_move_t *moveslot_0 = p_opp->get_move(0);
+  // pd_move_t *moveslot_1 = p_opp->get_move(1);
+  // pd_move_t *moveslot_2 = p_opp->get_move(2);
+  // pd_move_t *moveslot_3 = p_opp->get_move(3);
+  // if (moveslot_0 != 0)
+  //   mvprintw(15,2, "%s", moveslot_0->identifier);
+  // if (moveslot_1 != 0)
+  //   mvprintw(16,2, "%s", moveslot_1->identifier);
+  // if (moveslot_2 != 0)
+  //   mvprintw(17,2, "%s", moveslot_2->identifier);
+  // if (moveslot_3 != 0)
+  //   mvprintw(18,2, "%s", moveslot_3->identifier);
+  // mvprintw(20,0,"Press ESC to exit encounter");
   refresh();
   return;
 }
@@ -370,11 +470,11 @@ void render_pick_starter(int32_t scroller_pos,
   
 
   mvaddch(2,0, ACS_VLINE);
-  mvprintw(2, 2, "%s  lvl %d", p1->get_nickname(), p1->get_level());
+  mvprintw(2, 2, "%s  Lv.%d", p1->get_nickname(), p1->get_level());
   mvaddch(3,0, ACS_VLINE);
-  mvprintw(3, 2, "%s  lvl %d", p2->get_nickname(), p2->get_level());
+  mvprintw(3, 2, "%s  Lv.%d", p2->get_nickname(), p2->get_level());
   mvaddch(4,0, ACS_VLINE);
-  mvprintw(4, 2, "%s  lvl %d", p3->get_nickname(), p3->get_level());
+  mvprintw(4, 2, "%s  Lv.%d", p3->get_nickname(), p3->get_level());
 
   mvaddch(2 + scroller_pos,0, '>');
 
@@ -384,39 +484,53 @@ void render_pick_starter(int32_t scroller_pos,
 }
 
 /*
- * Process user input while in a battle
- */
-void process_input_battle(battle_t *battle) {
-  uint32_t no_op = 1;
-  int32_t key = 0;
-
-  flushinp();
-  while (no_op)  {
-    key = getch();
-    if (CTRL_LEAVE_BATTLE) {
-      battle->end_battle = 1;
-      no_op = 0;
-    } else if (CTRL_QUIT_GAME) {
-      pc->set_quit_game(true);
-      no_op = 0;
-    }
-  }
-  return;
-}
-
-/*
  * Process user input while in an encounter
  */
-void process_input_encounter(encounter_t *encounter) {
+void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos, 
+                          bool *selected_fight, bool *pc_turn) {
   uint32_t no_op = 1;
   int32_t key = 0;
+
+  /* 
+   * Pokemon battle menu scroller layout
+   * 0 Fight    1 Bag
+   * 2 Pokemon  3 Run
+   * 
+   * Moveslot layout:
+   * move 0   move 1
+   * move 2   move 3
+   */
 
   flushinp();
   while (no_op)  {
     key = getch();
-    if (CTRL_LEAVE_BATTLE) {
-      encounter->end_encounter = 1;
-      no_op = 0;
+    if (CTRL_UP) {
+      if (*scroller_pos > 0) {
+        --(*scroller_pos); 
+        no_op = 0;
+      }
+    } else if (CTRL_DOWN) {
+      if ((!*selected_fight && *scroller_pos < 3)
+        || (*selected_fight && *scroller_pos < p_pc->get_num_moves() - 1))
+       {
+        ++(*scroller_pos); 
+        no_op = 0;
+      }
+    } else if (CTRL_SELECT || CTRL_RIGHT) {
+      if (*scroller_pos != 0 || *selected_fight) {
+        *pc_turn = false; 
+        no_op = 0;
+      } else {
+        *selected_fight = true;
+        *scroller_pos = 0;
+        no_op = 0;
+      }
+    } else if (CTRL_BACK || CTRL_LEFT) {
+      if (*selected_fight) {
+        *selected_fight = false;
+        *scroller_pos = 0;
+        no_op = 0;
+      }
     } else if (CTRL_QUIT_GAME) {
       pc->set_quit_game(true);
       no_op = 0;
@@ -505,7 +619,7 @@ void process_input_tnr_overlay(int32_t *scroller_pos, int32_t *close_overlay) {
  * Process user input while in the player bag menu
  */
 void process_input_bag(int32_t *page_index, int32_t *scroller_pos, 
-                       int32_t *close_bag) {
+                       int32_t *close_bag, int32_t *item_selected) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
@@ -531,6 +645,9 @@ void process_input_bag(int32_t *page_index, int32_t *scroller_pos,
         }
         no_op = 0;
       }
+    } else if (CTRL_SELECT) {
+        *item_selected = *scroller_pos;
+        no_op = 0;
     } else if (CTRL_QUIT_GAME) {
       pc->set_quit_game(true);
       no_op = 0;
@@ -560,7 +677,7 @@ void process_input_pick_starter(int32_t *scroller_pos,
         --(*scroller_pos);
         no_op = 0;
       }
-    } else if (CTRL_SELECT) {
+    } else if (CTRL_SELECT || CTRL_RIGHT) {
       *selected_pokemon = *scroller_pos + 1;
       no_op = 0;
     }
@@ -658,7 +775,12 @@ void process_input_nav() {
       if (pc->is_quit_game())
         no_op = 0;
     } else if (CTRL_OPEN_BAG) {
-      bag_region_driver();
+      bag_driver();
+      render_region(r);
+      if (pc->is_quit_game())
+        no_op = 0;
+    } else if (CTRL_VIEW_PARTY) {
+      party_view_driver();
       render_region(r);
       if (pc->is_quit_game())
         no_op = 0;

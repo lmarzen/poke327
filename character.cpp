@@ -74,7 +74,7 @@ void Character::process_movement_turn() {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_driver(this, pc);
+      battle_trainer_driver(this, pc);
     } else if (is_valid_location(pos_i + dir_offsets[dir][0], 
                                  pos_j + dir_offsets[dir][1], 
                                  tnr)) {
@@ -89,7 +89,7 @@ void Character::process_movement_turn() {
       // do nothing
       } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
               && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_driver(this, pc);
+      battle_trainer_driver(this, pc);
     } else if ((r->get_ter(pos_i + dir_offsets[dir][0], 
                            pos_j + dir_offsets[dir][1])
              == r->get_ter(pos_i                      , 
@@ -110,7 +110,7 @@ void Character::process_movement_turn() {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_driver(this, pc);
+      battle_trainer_driver(this, pc);
     } else if (is_valid_location(pos_i + dir_offsets[dir][0],
                                  pos_j + dir_offsets[dir][1], tnr)) {
       pos_i += dir_offsets[dir][0];
@@ -190,7 +190,13 @@ int32_t Character::add_pokemon(Pokemon *p) {
     party.push_back(*p);
     return 1;
   }
-  return 0 ;
+  return 0;
+}
+Pokemon* Character::get_pokemon(int32_t i) {
+  return &party[i];
+}
+int32_t Character::party_size() {
+  return party.size();
 }
 
 
@@ -207,7 +213,7 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   reg_x = r_x;
   reg_y = r_y;
   movetime = 0;
-
+  
   // get pointer to present region from global variables
   Region *r = region_ptr[reg_x][reg_y];
 
@@ -235,6 +241,10 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   add_item_to_bag(item_pokeball, 10);
 }
 
+Pc::~Pc() {
+  party.clear();
+}
+
 int32_t Pc::get_x() {
   return reg_x;
 }
@@ -252,21 +262,21 @@ void Pc::set_quit_game(bool q) {
 void Pc::pick_starter_driver() {
   int32_t scroller_pos = 0;
   int32_t selected_pokemon = 0;
-  Pokemon p1 = Pokemon();
-  Pokemon p2 = Pokemon();
-  Pokemon p3 = Pokemon();
+  Pokemon *p1 = new Pokemon();
+  Pokemon *p2 = new Pokemon();
+  Pokemon *p3 = new Pokemon();
 
   while (!selected_pokemon) {
-    render_pick_starter(scroller_pos, &p1, &p2, &p3);
+    render_pick_starter(scroller_pos, p1, p2, p3);
     process_input_pick_starter(&scroller_pos, &selected_pokemon);
   }
 
   if (selected_pokemon == 1) {
-    add_pokemon(&p1);
+    add_pokemon(p1);
   } else if (selected_pokemon == 2) {
-    add_pokemon(&p2);
+    add_pokemon(p2);
   } else if (selected_pokemon == 3) {
-    add_pokemon(&p3);
+    add_pokemon(p3);
   }
 
   return;
@@ -320,4 +330,8 @@ Npc::Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime) {
       sprintf(m,"Error: Unhandled trainer type %d", tnr);
       exit_w_message(m);
   }
+}
+
+Npc::~Npc() {
+  party.clear();
 }

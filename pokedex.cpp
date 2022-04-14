@@ -23,6 +23,7 @@ pd_pokemon_species_t pd_pokemon_species[POKEDEX_POKEMON_SPECIES_ENTRIES];
 pd_pokemon_stat_t pd_pokemon_stats[POKEDEX_POKEMON_STATS_ENTRIES];
 pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
 char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
+pd_pokemon_type_t pd_pokemon_types[POKEDEX_POKEMON_TYPES_ENTRIES];
 
 static char *next_token(char *start, char delim)
 {
@@ -96,7 +97,7 @@ void init_pd_pokemon() {
         if (atoi(tmp[0]) <= 386) {
           // we only care about cols where id <= 386 (Gen I-III)
           pd_pokemon[i].id = atoi(tmp[0]);
-          strncpy(pd_pokemon[i].identifier, tmp[1], 30);
+          strncpy(pd_pokemon[i].identifier, tmp[1], 12);
           pd_pokemon[i].species_id = atoi(tmp[2]);
           pd_pokemon[i].height = atoi(tmp[3]);
           pd_pokemon[i].weight = atoi(tmp[4]);
@@ -575,6 +576,69 @@ void init_pd_type_name() {
   }
 }
 
+void init_pd_pokemon_types() {
+  FILE *f;
+  char line[800];
+  std::string fname;
+  int32_t failed = 0;
+  bool success = false;
+  int32_t i = 0;
+  char *tmp;
+ 
+  fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_POKEMON_TYPES_PATH);
+
+  while (failed != 3 && !success) {
+    if (failed == 1) {
+      fname = getenv("HOME");
+      fname.append(CONCAT(POKEDEX_DB_PATH_2,POKEDEX_POKEMON_TYPES_PATH));
+    }
+    if (failed == 2) {
+      fname = CONCAT(POKEDEX_DB_PATH_3,POKEDEX_POKEMON_TYPES_PATH);
+    }
+    #ifdef VERBOSE_POKEDEX
+    std::cout << "Checking for " << fname << std::endl;
+    #endif
+
+    if((f = fopen(fname.c_str(), "r")))
+    {
+      success = true;
+      std::cout << "  Using " << fname << std::endl;
+
+      // skip first line
+      fgets(line, 800, f);
+      #ifdef VERBOSE_POKEDEX
+      std::cout << line;
+      #endif
+
+      while(fgets(line, 800, f))
+      {
+        #ifdef VERBOSE_POKEDEX
+        std::cout << line;
+        #endif
+
+        pd_pokemon_types[i].pokemon_id = atoi((tmp = next_token(line, ',')));
+        tmp = next_token(NULL, ',');
+        pd_pokemon_types[i].type_id = *tmp ? atoi(tmp) : -1;
+        tmp = next_token(NULL, ',');
+        pd_pokemon_types[i].slot =  *tmp ? atoi(tmp) : -1;
+        ++i;
+      }
+    } else {
+      ++failed;
+    }
+    if (success) {
+      fclose(f);
+    }
+  }
+
+  if (!success) {
+		std::cout << "Error: Failed to find(or open) " 
+              << TOSTRING(POKEDEX_POKEMON_TYPES_PATH) 
+              << std::endl;
+    exit(-1);
+  }
+}
+
 void init_pd() {
   init_pd_pokemon();
   init_pd_moves();
@@ -583,4 +647,5 @@ void init_pd() {
   init_pd_pokemon_stats();
   init_pd_experience();
   init_pd_type_name();
+  init_pd_pokemon_types();
 }

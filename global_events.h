@@ -13,17 +13,18 @@ void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr);
 void free_all_regions();
 void init_terminal();
 void render_region(Region *r);
-void render_battle(battle_t *battle);
+void render_battle(Pokemon *p_pc, Pokemon *p_opp,
+                   const char* message, bool show_menu,
+                   int32_t scroller_pos, bool selected_fight);
 void render_bag(int32_t page_index, int32_t scroller_pos);
 void render_pick_starter(int32_t scroller_pos, 
                          Pokemon *p1, Pokemon *p2, Pokemon *p3);
-void process_input_battle(battle_t *battle);
 void process_input_bag(int32_t *page_index, int32_t *scroller_pos, 
-                       int32_t *close_bag);
+                       int32_t *close_bag, int32_t *item_selected);
 void process_input_pick_starter(int32_t *scroller_pos, 
                                 int32_t *selected_pokemon);
-void render_encounter(encounter_t *encounter);
-void process_input_encounter(encounter_t *encounter);
+void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos, 
+                          bool *selected_fight, bool *pc_turn);
 void process_input_nav();
 void exit_w_message(const char* message);
 

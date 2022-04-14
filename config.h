@@ -21,7 +21,10 @@
 #define CTRL_LEAVE_BATTLE  key == 27 /*ESC*/
 #define CTRL_OPEN_BAG      key == 'B'
 #define CTRL_CLOSE_BAG     key == 27 /*ESC*/ || key =='B'
-#define CTRL_SELECT        key == 10 /*ENTER*/
+#define CTRL_VIEW_PARTY    key == 'p'
+#define CTRL_CLOSE_PARTY   key == 27 /*ESC*/ || key =='p'
+#define CTRL_SELECT        key == 10 /*ENTER*/ || key == '>' || key == '.'
+#define CTRL_BACK          key == 27 /*ESC*/ || key == '<' || key == ','
 
 // Will print parsing debug info and parsed data to terminal if defined
 // #define VERBOSE_POKEDEX
@@ -42,6 +45,7 @@
 #define POKEDEX_POKEMON_STATS_PATH   pokedex/data/csv/pokemon_stats.csv
 #define POKEDEX_EXPERIENCE_PATH      pokedex/data/csv/experience.csv
 #define POKEDEX_TYPE_NAMES_PATH      pokedex/data/csv/type_names.csv
+#define POKEDEX_POKEMON_TYPES_PATH   pokedex/data/csv/pokemon_types.csv
 // pokedex database entry count 
 // number of entries = line count - 1; because there is a header line
 #define POKEDEX_POKEMON_ENTRIES         386    // 386 pokemon (Gen I-III)
@@ -52,6 +56,8 @@
 #define POKEDEX_POKEMON_STATS_ENTRIES   6552   // 6553 total lines
 #define POKEDEX_EXPERIENCE_ENTRIES      600    // 601 total lines
 #define POKEDEX_TYPE_NAMES_ENTRIES      20     // 20 english types
+#define POKEDEX_POKEMON_TYPES_ENTRIES   1675   // 1676 total lines
+
 
 // World dimensions, world is made up of regions (WORLD_SIZE * WORLD_SIZE)
 #define WORLD_SIZE 399
@@ -89,6 +95,8 @@
 #define CHAR_WANDERER     'w'
 #define CHAR_STATIONARY   's'
 #define CHAR_RAND_WALKER  'n'
+#define CHAR_HEALTH       '='
+#define CHAR_EXP          '-'
 #define CHAR_UNDEFINED    'U'
 
 // Colors
@@ -109,6 +117,10 @@
 #define CHAR_COLOR_WANDERER     COLOR_MAGENTA
 #define CHAR_COLOR_STATIONARY   COLOR_CYAN
 #define CHAR_COLOR_RAND_WALKER  COLOR_MAGENTA
+#define CHAR_COLOR_HEALTH_HIGH  COLOR_CYAN
+#define CHAR_COLOR_HEALTH_MED   COLOR_YELLOW
+#define CHAR_COLOR_HEALTH_LOW   COLOR_RED
+#define CHAR_COLOR_EXP          COLOR_BLUE
 #define CHAR_COLOR_UNDEFINED    COLOR_RED
 #define CHAR_COLOR_BACKGROUND   COLOR_BLACK
 

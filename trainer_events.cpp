@@ -33,18 +33,19 @@ void init_trainer_pq(heap_t *queue, Region *r) {
 /*
  * Initiates and drives a battle
  */
-void battle_driver(Character *opp, Pc *pc) {
-  battle_t battle;
-  battle.opp = opp;
-  battle.pc = pc;
-  battle.end_battle = 0;
+void battle_trainer_driver(Character *opp, Pc *pc) {
+  // battle_t battle;
+  // battle.opp = opp;
+  // battle.pc = pc;
+  // battle.end_battle = 0;
+  // pc->set_state(s_battle);
 
-  while (!battle.end_battle && !(pc->is_quit_game())) {
-    render_battle(&battle);
-    process_input_battle(&battle);
-  }
+  // while (!battle.end_battle && !(pc->is_quit_game())) {
+  //   render_battle(&battle);
+  //   process_input_battle(&battle);
+  // }
 
-  opp->set_defeated(true);
+  // opp->set_defeated(true);
   return;
 }
 
@@ -60,7 +61,7 @@ bool check_trainer_battle(int32_t to_i, int32_t to_j) {
     if (it->get_i() == to_i
      && it->get_j() == to_j
      && !(it->is_defeated())) {
-      battle_driver(&(*it), pc);
+      battle_trainer_driver(&(*it), pc);
       return true;
     }
   }
@@ -70,17 +71,72 @@ bool check_trainer_battle(int32_t to_i, int32_t to_j) {
 /*
  * Initiates and drives an encounter
  */
-void encounter_driver(Pc *pc) {
-  encounter_t encounter;
-  encounter.pc = pc;
-  Pokemon wild_poke = Pokemon();
-  encounter.wp = &wild_poke;
-  encounter.end_encounter = 0;
+void battle_encounter_driver(Pc *pc) {
+  Pokemon *wild_poke = new Pokemon();
+  bool end_encounter = false;
+  int32_t scroller_pos = 0;
+  bool selected_fight = false;
+  pd_move_t *ai_move;
+  int32_t priority;
+  bool pc_turn;
+  char m[MAX_COL];
+  Pokemon *pc_active_p = pc->get_pokemon(0);
 
-  // encounter.wp = random
-  while (!encounter.end_encounter && !(pc->is_quit_game())) {
-    render_encounter(&encounter);
-    process_input_encounter(&encounter);
+  while (!end_encounter && !(pc->is_quit_game())) {
+    sprintf(m, "What will %s do?", 
+            pc_active_p->get_nickname());
+    render_battle(pc_active_p, wild_poke, 
+                  m, true, scroller_pos, selected_fight);
+
+    ai_move = wild_poke->get_rand_move();
+    pc_turn = true;
+
+    while (pc_turn && !(pc->is_quit_game())) {
+      process_input_battle(pc_active_p, &scroller_pos, &selected_fight, 
+                           &pc_turn);
+      
+      
+      render_battle(pc_active_p, wild_poke,
+                    m, true, scroller_pos, selected_fight);
+    }
+
+  /* 
+   * Pokemon battle menu scroller layout
+   * 0 Fight
+   * 1 Bag
+   * 2 Pokemon  
+   * 3 Run
+   */
+    if (!(pc->is_quit_game())) {
+      switch (scroller_pos) {
+        case 0: // Fight
+          priority = move_priority(
+                      pc_active_p->get_move(scroller_pos)->priority, 
+                      pc_active_p->get_stat(stat_speed),
+                      ai_move->priority, 
+                      wild_poke->get_stat(stat_speed));
+          if (priority > 0) {
+            // pc turn
+            // wp turn
+          } else {
+            // wp turn
+            // pc turn
+          }
+          break;
+        case 1: // Bag
+          break;
+        case 2: // Pokemon
+          break;
+        case 3: // Run
+          break;
+      }
+    }
+    
+  }
+
+  if (wild_poke->get_current_hp() == 0) {
+    // TODO or if run, we should also free
+    delete wild_poke;
   }
   
   return;
@@ -98,7 +154,7 @@ bool check_wild_encounter() {
 
   terrain_t standing_on = r->get_ter(pc->get_i(), pc->get_j());
   if ((standing_on == ter_grass) && (randy == 0)) {
-    encounter_driver(pc);
+    battle_encounter_driver(pc);
     return true;
   }
   return false;
@@ -228,7 +284,7 @@ void move_along_gradient(Character *c, int32_t dist_map[MAX_ROW][MAX_COL]) {
   // Check if initiating a battle
   if (pc->get_i() == (c->pos_i + next_i)
    && pc->get_j() == (c->pos_j + next_j)) {
-    battle_driver(c, pc);
+    battle_trainer_driver(c, pc);
     return;
   }
 
@@ -290,20 +346,39 @@ int32_t process_pc_move_attempt(direction_t dir) {
 }
 
 /*
- * Drives trainer bag interactions
+ * Drives player bag interactions when the bag is opened
+ * Returns the index of if an item was used. -1 if no item was used.
  */
-void bag_region_driver() {
+int32_t bag_driver() {
   int32_t close_bag = 0;
   int32_t scroller_pos = 0;
   int32_t page_index = 0;
+  int32_t item_selected = -1;
 
-  while (!close_bag && !(pc->is_quit_game())) {
+  while (!close_bag && !(pc->is_quit_game()) && item_selected == -1) {
     render_bag(page_index, scroller_pos);
-    process_input_bag(&page_index, &scroller_pos, &close_bag);
+    process_input_bag(&page_index, &scroller_pos, &close_bag, &item_selected);
   }
+  return item_selected;
+}
+
+/*
+ * Drives player party interactions
+ * Switch pokemon or view pokemon summary
+ */
+void party_view_driver() {
+  int32_t close_party = 0;
+  int32_t scroller_pos = 0;
+  int32_t option_pos = 0;
+  int32_t pokemon_selected = -1;
+  int32_t option_selected = -1;
+
+  while (!close_party && !(pc->is_quit_game()) && option_selected == -1) {
+    //render_party(page_index, scroller_pos);
+    //process_input_party_view(&page_index, &scroller_pos, &close_party, &item_selected);
+  }
+
   return;
-
 }
-void bag_battle_driver() {
 
-}
+
