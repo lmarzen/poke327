@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstring>
 #include <ncurses.h>
 
 #include "character.h"
@@ -187,6 +188,7 @@ bag_slot_t Character::peek_bag_slot(int32_t index) {
  */
 int32_t Character::add_pokemon(Pokemon *p) {
   if (party.size() < 6) {
+    p->set_has_owner(true);
     party.push_back(*p);
     return 1;
   }
@@ -197,6 +199,12 @@ Pokemon* Character::get_pokemon(int32_t i) {
 }
 int32_t Character::party_size() {
   return party.size();
+}
+const char* Character::get_nickname() {
+  return nickname;
+}
+void Character::rename(char new_name[12]) {
+  strncpy(nickname, new_name, 12);
 }
 
 
@@ -213,6 +221,7 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   reg_x = r_x;
   reg_y = r_y;
   movetime = 0;
+  strncpy(nickname, "PLAYER", 12);
   
   // get pointer to present region from global variables
   Region *r = region_ptr[reg_x][reg_y];
@@ -233,7 +242,6 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
     }
   }
   movetime = turn_times[r->get_ter(pos_i, pos_j)][tnr];
-
 
   // give the player starting items
   add_item_to_bag(item_potion, 10);
@@ -296,31 +304,37 @@ Npc::Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime) {
 
   switch (tnr) {
     case tnr_hiker:
+    strncpy(nickname, "HIKER", 12);
       ch = CHAR_HIKER;
       color = CHAR_COLOR_HIKER;
       // dir is unused for this trainer type
       break;
     case tnr_rival:
+      strncpy(nickname, "RIVAL", 12);
       ch = CHAR_RIVAL;
       color = CHAR_COLOR_RIVAL;
       // dir is unused for this trainer type
       break;
     case tnr_pacer:
+      strncpy(nickname, "PACER", 12);
       ch = CHAR_PACER;
       color = CHAR_COLOR_PACER;
       dir = static_cast<direction_t>(rand() % 8);
       break;
     case tnr_wanderer:
+      strncpy(nickname, "WANDERER", 12);
       ch = CHAR_WANDERER;
       color = CHAR_COLOR_WANDERER;
       dir = static_cast<direction_t>(rand() % 8);
       break;
     case tnr_stationary:
+      strncpy(nickname, "STATIONARY", 12);
       ch = CHAR_STATIONARY;
       color = CHAR_COLOR_STATIONARY;
       // dir is unused for this trainer type
       break;
     case tnr_rand_walker:
+      strncpy(nickname, "WALKER", 12);
       ch = CHAR_RAND_WALKER;
       color = CHAR_COLOR_RAND_WALKER;
       dir = static_cast<direction_t>(rand() % 8);

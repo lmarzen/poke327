@@ -5,7 +5,7 @@
 #include <climits>
 #include <vector>
 #include "config.h"
-#include "item.h"
+#include "items.h"
 #include "pokemon.h"
 
 typedef enum trainer {
@@ -68,6 +68,7 @@ class Character {
     direction_t dir;
     std::vector<bag_slot_t> bag;
     std::vector<Pokemon> party;
+    char nickname[12];
     
   public:
     int32_t get_movetime();
@@ -88,6 +89,8 @@ class Character {
     int32_t add_pokemon(Pokemon *p);
     Pokemon* get_pokemon(int32_t i);
     int32_t party_size();
+    const char* get_nickname();
+    void rename(char new_name[12]);
 
   friend void move_along_gradient(Character *c, 
                                   int32_t dist_map[MAX_ROW][MAX_COL]);

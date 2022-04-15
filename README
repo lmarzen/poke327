@@ -1,40 +1,19 @@
-Files
----
-CHANGELOG
-character.cpp
-character.h
-config.h
-global_events.cpp
-global_events.h
-heap.c
-heap.h
-item.cpp
-item.h
-main.cpp
-Makefile
-pathfinding.cpp
-pathfinding.h
-pokedex.cpp
-pokedex.h
-pokemon.cpp
-pokemon.h
-README
-region.cpp
-region.h
-trainer_events.cpp
-trainer_events.h
-
 Description
 ---
-Regions are procedurally generated and populated. Controls can be used to 
-navigate regions. Trainer battles are initiated if the player and another 
-trainer come into contact. Wild pokemon encounters have a chance of happening
-each step the player takes in tall grass. Pokedex database files will be 
-searched for and parsed. Game includes all pokemon in Generations I-III. Written
-in C++.
+The player can navigate procedurally generated regions, engage in trainer battles and encounter wild pokemon. Pokedex database files will be searched for 
+and parsed. Game includes all pokemon in Generations I-III. Written in C++.
+
+The player can access a pokemon summary menu and bag menu in and out of battle.
+
+Note: Status effects are not implemented, and by extension status moves are not
+      implement and are programmed to always miss.
+Note: Assignment called for 'b' command to open the player's bag. Since 'b' is
+      already mapped to the control 'Down-Left', a capital 'B' is instead used 
+      to open the bag.
 
 Key
 ---
+TERRAIN
 %  Border
 %  Boulder
 ^  Tree
@@ -45,7 +24,7 @@ M  Poke Mart
 .  Clearing
 %  Mountain
 ^  Forest
-
+TRAINERS
 @  Player Character
 h  Hiker
 r  Rival
@@ -69,17 +48,41 @@ Enter Building    : '>'
 Exit Building     : '<'
 Show Trainer List : 't'
 Hide Trainer List : ESC or 't'
-Quit Game         : 'Q'
-Leave Battle      : ESC
 Open Bag          : 'B'
 Close Bag         : ESC or 'B'
 View Party        : 'p'
 Close Party       : ESC or 'p'
 Select            : ENTER or '>' or '.'
 Back              : ESC or '<' or ','
+Quit Game         : 'Q'
 
 Switches
 ---
 --numtrainers [int] - The number of trainers that will spawn in each region. 
                       If less than 0, random number of trainers will be spawned. (default)
 --seed [int] - The seed that will determine all random events.
+
+Files
+---
+CHANGELOG
+character.cpp
+character.h
+config.h
+global_events.cpp
+global_events.h
+heap.c
+heap.h
+items.h
+main.cpp
+Makefile
+pathfinding.cpp
+pathfinding.h
+pokedex.cpp
+pokedex.h
+pokemon.cpp
+pokemon.h
+README
+region.cpp
+region.h
+trainer_events.cpp
+trainer_events.h

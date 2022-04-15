@@ -5,8 +5,8 @@ CXX = g++
 # CFLAGS = -Wall -O2
 CFLAGS = -Wall -g
 
-HEADERS = config.h heap.h region.h pathfinding.h trainer_events.h global_events.h character.h pokedex.h pokemon.h item.h
-OBJECTS = main.o heap.o region.o pathfinding.o trainer_events.o global_events.o character.o pokedex.o pokemon.o item.o
+HEADERS = config.h heap.h region.h pathfinding.h trainer_events.h global_events.h character.h pokedex.h pokemon.h items.h
+OBJECTS = main.o heap.o region.o pathfinding.o trainer_events.o global_events.o character.o pokedex.o pokemon.o
 .PHONY: default all clean
 
 all: $(TARGET)

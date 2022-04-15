@@ -13,6 +13,7 @@ void load_region(int32_t region_x, int32_t region_y, int32_t num_tnr);
 void free_all_regions();
 void init_terminal();
 void render_region(Region *r);
+void render_battle_message(const char* m);
 void render_battle(Pokemon *p_pc, Pokemon *p_opp,
                    const char* message, bool show_menu,
                    int32_t scroller_pos, bool selected_fight);
@@ -27,5 +28,6 @@ void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos,
                           bool *selected_fight, bool *pc_turn);
 void process_input_nav();
 void exit_w_message(const char* message);
+void getch_select();
 
 #endif

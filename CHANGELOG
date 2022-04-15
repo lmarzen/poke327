@@ -37,4 +37,5 @@
 04/11/2022 - Added pokemon parties and starter selection.
 04/12/2022 - Updated controls.
              Fixed bug that selecting a starter would not show next screen.
-04/13/2022 - Added Pokemon Battle screen.
+04/13/2022 - Added battle screen.
+04/14/2022 - Implemented encounter battle mechanics.

@@ -24,7 +24,7 @@ void Pokemon::lookup_type() {
       // pokemon at a time.
       type[0] = pd_pokemon_types[i].type_id;
       if (pd_pokemon_types[i+1].pokemon_id == pd_entry->id) {
-        type[0] = pd_pokemon_types[i+1].type_id;
+        type[1] = pd_pokemon_types[i+1].type_id;
       }
       break;
     }
@@ -68,6 +68,7 @@ void Pokemon::populate_moveset() {
     current_pp[i] = 0;
   }
   num_moves = 0;
+  rand_move_index = -1;
 
   // 2. Find levelup learnset
   std::vector<int32_t> levelup_learnset;
@@ -170,16 +171,17 @@ Pokemon::Pokemon() {
   current_hp = stats[stat_hp];
   gender = static_cast<gender_t>(rand() % 2);
   shiny = rand() % POKEMON_SHINY_RATE == 0 ? true : false;
+  has_owner = false;
 }
 
 pd_pokemon_t* Pokemon::get_pd_entry() {
   return pd_entry;
 }
-char* Pokemon::get_nickname() {
+const char* Pokemon::get_nickname() {
   return nickname;
 }
-void Pokemon::rename(char new_name[30]) {
-  strncpy(nickname, new_name, 30);
+void Pokemon::rename(char new_name[12]) {
+  strncpy(nickname, new_name, 12);
 }
 int32_t Pokemon::get_level() {
   return level;
@@ -191,10 +193,12 @@ pd_move_t* Pokemon::get_move(int32_t move_slot) {
   return moveset[move_slot];
 }
 pd_move_t* Pokemon::get_rand_move() {
-  if (num_moves > 0) {
-    return moveset[rand() % num_moves];
+  if (num_moves > 0 && has_pp()) {
+    rand_move_index = rand() % num_moves;
+    return moveset[rand_move_index];
   }
   // if no pp or no moves then pokemon uses struggle
+  rand_move_index = -1;
   return &pd_moves[164]; // struggle id 165
 }
 int32_t Pokemon::get_num_moves() {
@@ -223,6 +227,42 @@ int32_t Pokemon::get_current_hp() {
 int32_t Pokemon::get_current_pp(int32_t m) {
   return current_pp[m];
 }
+int32_t Pokemon::use_pp(int32_t m) {
+  if ( current_pp[m] == 0 ) {
+    return 0;
+  }
+  --current_pp[m];
+  return 1;
+}
+int32_t Pokemon::use_rand_move_pp() {
+  if (rand_move_index == -1) {
+    return -1;
+  }
+  return use_pp(rand_move_index);
+}
+int32_t Pokemon::restore_pp(int32_t m, int32_t amount) {
+  if (current_pp[m] == moveset[m]->pp) {
+    return 0;
+  }
+  // protects against overflowing if amount + move pp > INT_MAX
+  // we can fully heal a pokemon by passing amount = INT_MAX
+  if (amount >= moveset[m]->pp) {
+    current_pp[m] = moveset[m]->pp;
+    return 1;
+  }
+  if (current_pp[m] + amount >= moveset[m]->pp) {
+    current_pp[m] = moveset[m]->pp;
+    return 1;
+  }
+  current_pp[m] += amount;
+  return 1;
+}
+bool Pokemon::has_pp() {
+  for (int32_t i = 0; i < num_moves; ++i)
+    if (current_pp[i] > 0)
+      return true;
+  return false;
+}
 gender_t Pokemon::get_gender() {
   return gender;
 }
@@ -231,6 +271,52 @@ bool Pokemon::is_shiny() {
 }
 int32_t Pokemon::get_type(int32_t slot) {
   return type[slot];
+}
+int32_t Pokemon::heal(int32_t amount) {
+  if (current_hp == stats[stat_hp]) {
+    return 0;
+  }
+  // protects against overflowing if amount + current_hp > INT_MAX
+  // we can fully heal a pokemon by passing amount = INT_MAX
+  if (amount >= stats[stat_hp]) {
+    current_hp = stats[stat_hp];
+    return 1;
+  }
+  if (current_hp + amount >= stats[stat_hp]) {
+    current_hp = stats[stat_hp];
+    return 1;
+  }
+  current_hp += amount;
+  return 1;
+}
+void Pokemon::take_damage(int32_t amount) {
+  // protects against overflowing if current_hp - amount < INT_MIN
+  if (amount > stats[stat_hp]) {
+    current_hp = 0;
+    return;
+  }
+  if (current_hp - amount <= 0) {
+    current_hp = 0;
+    return;
+  }
+  current_hp -= amount;
+  return;
+}
+bool Pokemon::get_has_owner() {
+  return has_owner;
+}
+void Pokemon::set_has_owner(bool new_value) {
+  has_owner = new_value;
+  return;
+}
+
+const char* move_type_name(pd_move_t *m) {
+  // handle type_id 1-18
+  if (m->type_id <= 18) {
+    return pd_type_names[m->type_id - 1];
+  }
+  // handle type_id 10001-10002
+  return pd_type_names[m->type_id - 9983];
 }
 
 /*
@@ -265,6 +351,14 @@ int32_t move_priority(int32_t move_priority_1, int32_t poke_speed_1,
 }
 
 /*
+ * Returns the type effectiveness multiplier of a move against another pokemon
+ */
+float effectiveness(pd_move_t *attacking_move, Pokemon *defender) {
+  // TODO
+  return 1.0;
+}
+
+/*
  * Returns the damage an attack will have on a defending pokemon
  */
 int32_t calculate_damage(Pokemon *attacker, pd_move_t *attacking_move, 
@@ -287,11 +381,11 @@ int32_t calculate_damage(Pokemon *attacker, pd_move_t *attacking_move,
     return 0;
   }
   float critical = is_critical ? 1.5 : 1.0;
-  float random = static_cast<float>((rand() % (100 - 85 + 1)) + 85);
+  float random = ((rand() % (100 - 85 + 1)) + 85) / 100.0;
   float stab = attacking_move->type_id == attacker->get_type(0) 
             || attacking_move->type_id == attacker->get_type(1)
              ? 1.5 : 1;
-  float type = 1.0; // TODO
+  float type = effectiveness(attacking_move, defender);
                            
   return static_cast<int32_t>(
         ( ( (2.0 * level) / 5.0 * power * (attack / defense) ) / 50.0 + 2.0) 
@@ -312,5 +406,5 @@ bool is_critical (Pokemon *attacker) {
  * if a miss occurs.
  */
 bool is_miss (pd_move_t *attacking_move) {
-  return rand() % 100 < attacking_move->accuracy;
+  return !( (rand() % 100) < attacking_move->accuracy );
 }

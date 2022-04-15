@@ -25,6 +25,11 @@ pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
 char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
 pd_pokemon_type_t pd_pokemon_types[POKEDEX_POKEMON_TYPES_ENTRIES];
 
+
+void toupper(char arr[]) {
+  for(char* c = arr; (*c = toupper(*c)); ++c);
+}
+
 static char *next_token(char *start, char delim)
 {
   int32_t i;
@@ -97,6 +102,7 @@ void init_pd_pokemon() {
         if (atoi(tmp[0]) <= 386) {
           // we only care about cols where id <= 386 (Gen I-III)
           pd_pokemon[i].id = atoi(tmp[0]);
+          toupper(tmp[1]);
           strncpy(pd_pokemon[i].identifier, tmp[1], 12);
           pd_pokemon[i].species_id = atoi(tmp[2]);
           pd_pokemon[i].height = atoi(tmp[3]);
@@ -164,7 +170,9 @@ void init_pd_moves() {
         #endif
   
         pd_moves[i].id = atoi((tmp = next_token(line, ',')));
-        strcpy(pd_moves[i].identifier, (tmp = next_token(NULL, ',')));
+        tmp = next_token(NULL, ',');
+        toupper(tmp);
+        strncpy(pd_moves[i].identifier, tmp, 30);
         tmp = next_token(NULL, ',');
         pd_moves[i].generation_id = *tmp ? atoi(tmp) : -1;
         tmp = next_token(NULL, ',');
@@ -325,7 +333,9 @@ void init_pd_pokemon_species() {
         #endif
 
         pd_pokemon_species[i].id = atoi((tmp = next_token(line, ',')));
-        strcpy(pd_pokemon_species[i].identifier, (tmp = next_token(NULL, ',')));
+        tmp = next_token(NULL, ',');
+        toupper(tmp);
+        strncpy(pd_pokemon_species[i].identifier, tmp, 30);
         tmp = next_token(NULL, ',');
         pd_pokemon_species[i].generation_id = *tmp ? atoi(tmp) : -1;
         tmp = next_token(NULL, ',');
@@ -556,6 +566,7 @@ void init_pd_type_name() {
         if (!strcmp(tmp[1],"9") ) {
           // we only care about col 2 since we are assuming the order 
           // corresponds with type_id
+          toupper(tmp[2]);
           strncpy(pd_type_names[i], tmp[2], 30);
           ++i;
         }

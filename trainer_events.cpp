@@ -2,17 +2,35 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>
 
 #include "config.h"
 #include "heap.h"
 #include "region.h"
 #include "global_events.h"
 #include "trainer_events.h"
+#include "items.h"
 
 extern Region *region_ptr[WORLD_SIZE][WORLD_SIZE];
 extern Pc *pc;
 extern int32_t dist_map_hiker[MAX_ROW][MAX_COL];
 extern int32_t dist_map_rival[MAX_ROW][MAX_COL];
+
+#define NUM_CATCH_FAIL_TXT 4
+const char catch_fail_txt[NUM_CATCH_FAIL_TXT][MAX_COL] {
+  "Oh, no! The POKEMON broke free!",
+  "Aww! It appeared to be caught!",
+  "Aargh! Almost had it!",
+  "Shoot! It was so close, too!"
+};
+
+#define NUM_CATCH_ILLEGAL_TXT 4
+const char catch_illegal_txt[NUM_CATCH_ILLEGAL_TXT][MAX_COL] {
+  "The TRAINER blocked the BALL!",
+  "Don't be a thief!",
+  "It dodged the thrown BALL! This POKEMON can't be caught!",
+  "You missed the POKEMON!"
+};
 
 static int32_t movetime_cmp(const void *key, const void *with) {
   return ((Character *) key)->get_movetime() 
@@ -28,6 +46,70 @@ void init_trainer_pq(heap_t *queue, Region *r) {
   for (auto it = r->get_npcs()->begin(); it != r->get_npcs()->end(); ++it) {
     heap_insert(queue, (Character*) &(*it));
   }
+}
+
+/*
+ * Drives player bag interactions when the bag is opened
+ * Returns 0 if an item was used. 1 if no item was used.
+ */
+item_t bag_driver() {
+  int32_t close_bag = 0;
+  int32_t scroller_pos = 0;
+  int32_t page_index = 0;
+  int32_t item_selected = -1;
+
+  while (!close_bag && !(pc->is_quit_game()) && item_selected == -1) {
+    render_bag(page_index, scroller_pos);
+    process_input_bag(&page_index, &scroller_pos, &close_bag, &item_selected);
+  }
+  if (item_selected != -1) {
+    return pc->peek_bag_slot(item_selected).item;
+  }
+  return item_empty;
+}
+
+/*
+ * Returns true if item was successfully used, otherwise returns false.
+ */
+bool use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
+              item_t item) {
+  char m[MAX_COL];
+
+  switch (item) {
+    case item_pokeball:
+      if (opp_poke != NULL) {
+        user->remove_item_from_bag(item);
+        if (!opp_poke->get_has_owner()) {
+          // We are in a battle with a wild encounter
+          sprintf(m, "%s used %s", user->get_nickname(), item_name_txt[item]);
+          render_battle_message(m);
+          usleep(FRAMETIME);
+          flushinp();
+          getch();
+          user->add_pokemon(opp_poke);
+          sprintf(m, "Gotcha! %s was caught!", opp_poke->get_nickname());
+          // TODO: catch mechanics. (currently always success)
+          // sprintf(m, "Oh, no! The POKEMON broke free!"); 
+        } else {
+          // We are in a battle with another trainer
+          sprintf(m, "%s", catch_illegal_txt[rand() % NUM_CATCH_ILLEGAL_TXT]);
+        }
+        
+        render_battle_message(m);
+        usleep(FRAMETIME);
+        flushinp();
+        getch();
+      }
+      break;
+    case item_potion:
+      break;
+    case item_revive:
+      break;
+    default:
+     return false;
+  }
+
+  return false;
 }
 
 /*
@@ -69,10 +151,124 @@ bool check_trainer_battle(int32_t to_i, int32_t to_j) {
 }
 
 /*
+ * Process a single fighting turn.
+ * Returns true if the defending pokemon fainted
+ */
+bool do_fight_turn(Pokemon *attacker, pd_move_t *attacking_move, 
+                   Pokemon *defender, bool pc_is_attacker) {
+  int32_t damage;
+  float type;
+  bool critical;
+  char m[MAX_COL];
+  Pokemon *pc_poke, *opp_poke;
+
+  if (pc_is_attacker) {
+    pc_poke = attacker;
+    opp_poke = defender;
+    sprintf(m, "%s used %s!", attacker->get_nickname(), 
+                            attacking_move->identifier);
+  } else {
+    pc_poke = defender;
+    opp_poke = attacker;
+    if (!defender->get_has_owner()) {
+      sprintf(m, "Wild %s used %s!", attacker->get_nickname(), 
+                                     attacking_move->identifier);
+    } else {
+      sprintf(m, "Foe %s used %s!", attacker->get_nickname(), 
+                                    attacking_move->identifier);
+    }
+  }
+  render_battle(pc_poke, opp_poke, m, false, 0, 0);
+  usleep(FRAMETIME);
+  flushinp();
+  getch();
+
+  if (is_miss(attacking_move)) {
+    sprintf(m, "%s's attack missed!", attacker->get_nickname());
+    render_battle(pc_poke, opp_poke, m, false, 0, 0);
+    usleep(FRAMETIME);
+    flushinp();
+    getch();
+  } else {
+    critical = is_critical(attacker);
+    damage = calculate_damage(attacker, attacking_move, defender, critical);
+    defender->take_damage(damage);
+    if (critical) {
+      sprintf(m, "A critical hit!");
+      render_battle(pc_poke, opp_poke, m, false, 0, 0);
+      usleep(FRAMETIME);
+      flushinp();
+      getch();
+    }
+    type = effectiveness(attacking_move, defender);
+    if (type > 1) {
+      sprintf(m, "It's super effective!");
+      render_battle(pc_poke, opp_poke, m, false, 0, 0);
+      usleep(FRAMETIME);
+      flushinp();
+      getch();
+    } else if (type == 0) {
+      sprintf(m, "But it had no effect!");
+      render_battle(pc_poke, opp_poke, m, false, 0, 0);
+      usleep(FRAMETIME);
+      flushinp();
+      getch();
+    } else if (type < 1) {
+      sprintf(m, "It's not very effective...");
+      render_battle(pc_poke, opp_poke, m, false, 0, 0);
+      usleep(FRAMETIME);
+      flushinp();
+      getch();
+    }
+    if (defender->get_current_hp() == 0) {
+      if (pc_is_attacker) {
+        if (!defender->get_has_owner()) {
+          sprintf(m, "Wild %s fainted!", defender->get_nickname());
+        } else {
+          sprintf(m, "Foe %s fainted!", defender->get_nickname());
+        }
+      } else {
+        sprintf(m, "%s fainted!", defender->get_nickname());
+      }
+      render_battle(pc_poke, opp_poke, m, false, 0, 0);
+      usleep(FRAMETIME);
+      flushinp();
+      getch();
+      return true;
+    }
+  }
+  return false;
+}
+
+/*
+ * Process a battle turn for attempting to run from a wild pokemon
+ * Returns True only if escape is successful.
+ */
+bool attempt_escape (Pokemon *pc_active_p, Pokemon *wp, int32_t *attempts) {
+  int32_t escape_odds = (pc_active_p->get_stat(stat_speed) * 32)
+                        / ((wp->get_stat(stat_speed) / 4) % 256) 
+                        + 30 * (*attempts);
+  if (rand() % 256 < escape_odds) {
+    // Escape was successful
+    render_battle_message("Got away safely!");
+    usleep(FRAMETIME);
+    flushinp();
+    getch();
+    return true;
+  }
+  // Escape failed
+  render_battle_message("Can't escape!");
+  usleep(FRAMETIME);
+  flushinp();
+  getch();
+  return false;
+}
+
+/*
  * Initiates and drives an encounter
  */
 void battle_encounter_driver(Pc *pc) {
-  Pokemon *wild_poke = new Pokemon();
+  Pokemon *wp = new Pokemon();
   bool end_encounter = false;
   int32_t scroller_pos = 0;
   bool selected_fight = false;
@@ -81,62 +277,96 @@ void battle_encounter_driver(Pc *pc) {
   bool pc_turn;
   char m[MAX_COL];
   Pokemon *pc_active_p = pc->get_pokemon(0);
+  item_t selected_item;
+  int32_t esc_atempts = 0;
 
-  while (!end_encounter && !(pc->is_quit_game())) {
-    sprintf(m, "What will %s do?", 
-            pc_active_p->get_nickname());
-    render_battle(pc_active_p, wild_poke, 
-                  m, true, scroller_pos, selected_fight);
+  sprintf(m, "Wild %s appeared! Go! %s!", wp->get_nickname(), 
+                                          pc_active_p->get_nickname());
+  render_battle(pc_active_p, wp, m, true, scroller_pos, selected_fight);
+  usleep(500000);
+  flushinp();
+  getch();
 
-    ai_move = wild_poke->get_rand_move();
-    pc_turn = true;
+  while (!end_encounter && !(pc->is_quit_game()) 
+      && !wp->get_has_owner() && wp->get_current_hp() > 0) {
+    sprintf(m, "What will %s do?", pc_active_p->get_nickname());
+    render_battle(pc_active_p, wp, m, true, scroller_pos, selected_fight);
+
+    if (!pc_turn) {
+      ai_move = wp->get_rand_move();
+      pc_turn = true;
+    }
 
     while (pc_turn && !(pc->is_quit_game())) {
       process_input_battle(pc_active_p, &scroller_pos, &selected_fight, 
                            &pc_turn);
-      
-      
-      render_battle(pc_active_p, wild_poke,
-                    m, true, scroller_pos, selected_fight);
+      render_battle(pc_active_p, wp, m, true, scroller_pos, selected_fight);
     }
 
-  /* 
-   * Pokemon battle menu scroller layout
-   * 0 Fight
-   * 1 Bag
-   * 2 Pokemon  
-   * 3 Run
-   */
+   /* 
+    * Pokemon battle menu scroller layout
+    * 0 Fight
+    * 1 Bag
+    * 2 Pokemon  
+    * 3 Run
+    */
     if (!(pc->is_quit_game())) {
-      switch (scroller_pos) {
-        case 0: // Fight
+      // FIGHT
+      if (selected_fight) {
           priority = move_priority(
                       pc_active_p->get_move(scroller_pos)->priority, 
                       pc_active_p->get_stat(stat_speed),
                       ai_move->priority, 
-                      wild_poke->get_stat(stat_speed));
-          if (priority > 0) {
-            // pc turn
-            // wp turn
-          } else {
-            // wp turn
-            // pc turn
+                      wp->get_stat(stat_speed));
+          
+        if (priority > 0) {
+          end_encounter = do_fight_turn(pc_active_p, 
+                            pc_active_p->get_move(scroller_pos), wp, true);
+          pc_active_p->use_pp(scroller_pos);
+          if (!end_encounter) {
+            end_encounter = do_fight_turn(wp, ai_move, pc_active_p, false);
+            wp->use_rand_move_pp();
           }
-          break;
-        case 1: // Bag
-          break;
-        case 2: // Pokemon
-          break;
-        case 3: // Run
-          break;
+        } else {
+          end_encounter = do_fight_turn(wp, ai_move, pc_active_p, false);
+          wp->use_rand_move_pp();
+          if (!end_encounter) {
+            end_encounter = do_fight_turn(pc_active_p, 
+                              pc_active_p->get_move(scroller_pos), wp, true);
+            pc_active_p->use_pp(scroller_pos);
+          }
+        }
+        pc_turn = false;
+      // BAG
+      } else if (scroller_pos == 1) {
+        selected_item = bag_driver();
+        render_battle(pc_active_p, wp, m, false, 0, 0);
+        pc_turn = use_item(pc, pc_active_p, wp, selected_item);
+        if (!pc_turn && !wp->get_has_owner()) {
+          end_encounter = do_fight_turn(wp, ai_move, pc_active_p, false);
+          wp->use_rand_move_pp();
+        }
+      // POKEMON
+      } else if (scroller_pos == 2) {
+        // TODO: POKEMON SWITCHING
+      if (!pc_turn && !wp->get_has_owner()) {
+        end_encounter = do_fight_turn(wp, ai_move, pc_active_p, false);
+        wp->use_rand_move_pp();
+      }
+      // RUN
+      } else if (scroller_pos == 3) {
+        end_encounter = pc_turn = attempt_escape(pc_active_p, wp, &esc_atempts);
+        if (!pc_turn && !wp->get_has_owner()) {
+          end_encounter = do_fight_turn(wp, ai_move, pc_active_p, false);
+          wp->use_rand_move_pp();
+        }
       }
     }
     
   }
 
-  if (wild_poke->get_current_hp() == 0) {
-    // TODO or if run, we should also free
-    delete wild_poke;
+  if (wp->get_current_hp() == 0 || pc->is_quit_game()) {
+    delete wp;
   }
   
   return;
@@ -346,23 +576,6 @@ int32_t process_pc_move_attempt(direction_t dir) {
 }
 
 /*
- * Drives player bag interactions when the bag is opened
- * Returns the index of if an item was used. -1 if no item was used.
- */
-int32_t bag_driver() {
-  int32_t close_bag = 0;
-  int32_t scroller_pos = 0;
-  int32_t page_index = 0;
-  int32_t item_selected = -1;
-
-  while (!close_bag && !(pc->is_quit_game()) && item_selected == -1) {
-    render_bag(page_index, scroller_pos);
-    process_input_bag(&page_index, &scroller_pos, &close_bag, &item_selected);
-  }
-  return item_selected;
-}
-
-/*
  * Drives player party interactions
  * Switch pokemon or view pokemon summary
  */
@@ -380,5 +593,3 @@ void party_view_driver() {
 
   return;
 }
-
-

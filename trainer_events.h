@@ -7,6 +7,7 @@
 #include "region.h"
 #include "character.h"
 #include "pokemon.h"
+#include "items.h"
 
 typedef enum battle {
   trainer,
@@ -14,6 +15,7 @@ typedef enum battle {
 } battle_t;
 
 void init_trainer_pq(heap_t *queue, Region *r);
+item_t bag_driver();
 void battle_trainer_driver(Character *opp, Pc *pc);
 bool check_battle(int32_t to_i, int32_t to_j);
 void encounter_driver(Pc *pc);
@@ -24,7 +26,6 @@ bool is_valid_gradient(int32_t to_i, int32_t to_j,
 void move_along_gradient(Character *c, int32_t dist_map[MAX_ROW][MAX_COL]);
 void step_all_movetimes(Region *r, int32_t amount);
 int32_t process_pc_move_attempt(direction_t dir);
-int32_t bag_driver();
 void party_view_driver();
 
 

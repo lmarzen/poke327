@@ -17,14 +17,13 @@
 #define CTRL_EXIT_BLDG     key == '<'
 #define CTRL_TNR_LIST_SHOW key == 't'
 #define CTRL_TNR_LIST_HIDE key == 27 /*ESC*/ || key =='t'
-#define CTRL_QUIT_GAME     key == 'Q'
-#define CTRL_LEAVE_BATTLE  key == 27 /*ESC*/
 #define CTRL_OPEN_BAG      key == 'B'
 #define CTRL_CLOSE_BAG     key == 27 /*ESC*/ || key =='B'
 #define CTRL_VIEW_PARTY    key == 'p'
 #define CTRL_CLOSE_PARTY   key == 27 /*ESC*/ || key =='p'
 #define CTRL_SELECT        key == 10 /*ENTER*/ || key == '>' || key == '.'
 #define CTRL_BACK          key == 27 /*ESC*/ || key == '<' || key == ','
+#define CTRL_QUIT_GAME     key == 'Q'
 
 // Will print parsing debug info and parsed data to terminal if defined
 // #define VERBOSE_POKEDEX

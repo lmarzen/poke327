@@ -34,6 +34,8 @@ class Pokemon {
   gender_t gender;
   bool shiny;
   int32_t type[2];
+  bool has_owner;
+  int32_t rand_move_index;
 
   void lookup_type();
   void generate_level();
@@ -45,12 +47,13 @@ class Pokemon {
   public:
     Pokemon();
     pd_pokemon_t* get_pd_entry();
-    char* get_nickname();
+    const char* get_nickname();
     void rename(char new_name[12]);
     int32_t get_level();
     int32_t get_exp();
     pd_move_t* get_move(int32_t move_slot);
     pd_move_t* get_rand_move();
+    int32_t use_rand_move_pp();
     int32_t get_num_moves();
     void learn_move(pd_move_t *m);
     int32_t get_base_stat(stat_id_t stat_id);
@@ -58,16 +61,25 @@ class Pokemon {
     int32_t get_iv(stat_id_t stat_id);
     int32_t get_current_hp();
     int32_t get_current_pp(int32_t m);
+    int32_t use_pp(int32_t m);
+    int32_t restore_pp(int32_t m, int32_t amount);
+    bool has_pp();
     gender_t get_gender();
     bool is_shiny();
     int32_t get_type(int32_t slot);
+    int32_t heal(int32_t amount);
+    void take_damage(int32_t amount);
+    bool get_has_owner();
+    void set_has_owner(bool new_value);
 };
 
+const char* move_type_name(pd_move_t *m);
 int32_t move_priority(int32_t move_priority_1, int32_t poke_speed_1,
                       int32_t move_priority_2, int32_t poke_speed_2);
+float effectiveness(pd_move_t *attacking_move, Pokemon *defender);
 int32_t calculate_damage(Pokemon *attacker, pd_move_t *attacking_move, 
                          Pokemon *defender, bool is_critical);
-bool is_critical (Pokemon *attacker);
-bool is_miss (pd_move_t *attacking_move);
+bool is_critical(Pokemon *attacker);
+bool is_miss(pd_move_t *attacking_move);
 
 #endif

@@ -10,7 +10,7 @@
 #include "region.h"
 #include "trainer_events.h"
 #include "global_events.h"
-#include "item.h"
+#include "items.h"
 
 extern Region *region_ptr[WORLD_SIZE][WORLD_SIZE];
 extern Pc *pc;
@@ -200,7 +200,17 @@ void render_region(Region *r) {
 }
 
 /*
- * Renders an encounter to the screen
+ * Updates the battle message
+ */
+void render_battle_message(const char* m) {
+  move(12, 0);
+  clrtoeol();
+  mvprintw(12, 0, m);
+  refresh();
+}
+
+/*
+ * Renders a battle to the screen
  */
 void render_battle(Pokemon *p_pc, Pokemon *p_opp,
                    const char* message, bool show_menu,
@@ -289,25 +299,25 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
   if (show_menu) {
     mvaddch(13, 0, (0 == scroller_pos ? '>' : ACS_VLINE));
     if (!selected_fight) {
-      printw(" Fight");
+      printw(" FIGHT");
     } else if (p_pc->get_num_moves() > 0) {
       printw(" %s", p_pc->get_move(0)->identifier);
     }
     mvaddch(14, 0, (1 == scroller_pos ? '>' : ACS_VLINE));
     if (!selected_fight) {
-      printw(" Bag");
+      printw(" BAG");
     } else if (p_pc->get_num_moves() > 1) {
       printw(" %s", p_pc->get_move(1)->identifier);
     }
     mvaddch(15, 0, (2 == scroller_pos ? '>' : ACS_VLINE));
       if (!selected_fight) {
-      printw(" Pokemon");
+      printw(" POKEMON");
     } else if (p_pc->get_num_moves() > 2) {
       printw(" %s", p_pc->get_move(2)->identifier);
     }
     mvaddch(16, 0, (3 == scroller_pos ? '>' : ACS_VLINE));
     if (!selected_fight) {
-      printw(" Run");
+      printw(" RUN");
     } else if (p_pc->get_num_moves() > 3) {
       printw(" %s", p_pc->get_move(3)->identifier);
     }
@@ -315,8 +325,7 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
     if (selected_fight && p_pc->get_num_moves() > 0) {
       mvprintw(17, 0, "PP  %d/%d", p_pc->get_current_pp(scroller_pos), 
                                    p_pc->get_move(scroller_pos)->pp);
-      mvprintw(18, 0, "type/%s", 
-               pd_type_names[p_pc->get_move(scroller_pos)->type_id]);
+      mvprintw(18, 0, "type/%s", move_type_name(p_pc->get_move(scroller_pos)));
     }
 
   }
@@ -516,7 +525,7 @@ void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos,
         ++(*scroller_pos); 
         no_op = 0;
       }
-    } else if (CTRL_SELECT || CTRL_RIGHT) {
+    } else if (CTRL_SELECT) {
       if (*scroller_pos != 0 || *selected_fight) {
         *pc_turn = false; 
         no_op = 0;
@@ -525,7 +534,7 @@ void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos,
         *scroller_pos = 0;
         no_op = 0;
       }
-    } else if (CTRL_BACK || CTRL_LEFT) {
+    } else if (CTRL_BACK) {
       if (*selected_fight) {
         *selected_fight = false;
         *scroller_pos = 0;
@@ -804,4 +813,14 @@ void exit_w_message(const char* message) {
   }
   endwin();
   exit(-1);
+}
+
+void getch_select() {
+  int32_t key;
+  flushinp();
+  while (true) {
+    key = getch();
+    if (CTRL_SELECT)
+      return;
+  }
 }
