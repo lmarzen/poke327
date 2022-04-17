@@ -14,8 +14,8 @@ extern Pc *pc;
  */
 void Pokemon::lookup_type() {
   // initialize types to 0
-  type[0] = 0; // primary type
-  type[1] = 0; // secondary type
+  type[0] = -1; // primary type
+  type[1] = -1; // secondary type
   
   // Lookup types
   for (int32_t i = 0; i < POKEDEX_POKEMON_TYPES_ENTRIES; ++i) {
@@ -68,7 +68,6 @@ void Pokemon::populate_moveset() {
     current_pp[i] = 0;
   }
   num_moves = 0;
-  rand_move_index = -1;
 
   // 2. Find levelup learnset
   std::vector<int32_t> levelup_learnset;
@@ -189,17 +188,29 @@ int32_t Pokemon::get_level() {
 int32_t Pokemon::get_exp() {
   return exp;
 }
+int32_t Pokemon::get_exp_next_level() {
+  // TODO
+  return 0;
+}
 pd_move_t* Pokemon::get_move(int32_t move_slot) {
+  if (move_slot < 0 || move_slot > num_moves) {
+    return &pd_moves[164]; // struggle id 165
+  }
   return moveset[move_slot];
 }
-pd_move_t* Pokemon::get_rand_move() {
+int32_t Pokemon::ai_select_move_slot() {
   if (num_moves > 0 && has_pp()) {
-    rand_move_index = rand() % num_moves;
-    return moveset[rand_move_index];
+    bool found_move = false;
+    int32_t randy;
+    while (!found_move) {
+      randy = rand() % num_moves;
+      if (current_pp[randy] > 0) {
+        return randy;
+      }
+    }
   }
   // if no pp or no moves then pokemon uses struggle
-  rand_move_index = -1;
-  return &pd_moves[164]; // struggle id 165
+  return -1;
 }
 int32_t Pokemon::get_num_moves() {
   return num_moves;
@@ -224,21 +235,18 @@ int32_t Pokemon::get_iv(stat_id_t stat_id) {
 int32_t Pokemon::get_current_hp() {
   return current_hp;
 }
-int32_t Pokemon::get_current_pp(int32_t m) {
-  return current_pp[m];
-}
-int32_t Pokemon::use_pp(int32_t m) {
-  if ( current_pp[m] == 0 ) {
+int32_t Pokemon::get_current_pp(int32_t move_slot) {
+  if (move_slot < 0 || move_slot >= num_moves)
     return 0;
-  }
-  --current_pp[m];
-  return 1;
+  return current_pp[move_slot];
 }
-int32_t Pokemon::use_rand_move_pp() {
-  if (rand_move_index == -1) {
-    return -1;
-  }
-  return use_pp(rand_move_index);
+int32_t Pokemon::use_pp(int32_t move_slot) {
+  if (move_slot < 0 || move_slot >= num_moves)
+    return 0;
+  if (current_pp[move_slot] == 0)
+    return 0;
+  --current_pp[move_slot];
+  return 1;
 }
 int32_t Pokemon::restore_pp(int32_t m, int32_t amount) {
   if (current_pp[m] == moveset[m]->pp) {
@@ -309,14 +317,20 @@ void Pokemon::set_has_owner(bool new_value) {
   has_owner = new_value;
   return;
 }
+bool Pokemon::is_fainted() {
+  return current_hp <= 0;
+}
 
-const char* move_type_name(pd_move_t *m) {
+const char* type_name(int32_t type_id) {
+  if (type_id < 1) {
+    return "";
+  }
   // handle type_id 1-18
-  if (m->type_id <= 18) {
-    return pd_type_names[m->type_id - 1];
+  if (type_id <= 18) {
+    return pd_type_names[type_id - 1];
   }
   // handle type_id 10001-10002
-  return pd_type_names[m->type_id - 9983];
+  return pd_type_names[type_id - 9983];
 }
 
 /*
@@ -397,8 +411,11 @@ int32_t calculate_damage(Pokemon *attacker, pd_move_t *attacking_move,
  * Returns a boolean, calculated with the appropriate random odds, to indicate
  * if a critical hit occurs.
  */
-bool is_critical (Pokemon *attacker) {
-  return rand() % 256 < attacker->get_base_stat(stat_speed)/2;
+bool is_critical (Pokemon *attacker, pd_move_t *attacking_move) {
+  // status moves can not crit
+  if (attacking_move->damage_class_id == 1) 
+    return false;
+  return (rand() % 256) < attacker->get_base_stat(stat_speed)/2;
 }
 
 /*
@@ -406,5 +423,8 @@ bool is_critical (Pokemon *attacker) {
  * if a miss occurs.
  */
 bool is_miss (pd_move_t *attacking_move) {
+  // accuracy not specified means this attack cannot miss
+  if (attacking_move->accuracy == -1)
+    return false;
   return !( (rand() % 100) < attacking_move->accuracy );
 }

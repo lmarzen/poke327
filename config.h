@@ -25,7 +25,7 @@
 #define CTRL_BACK          key == 27 /*ESC*/ || key == '<' || key == ','
 #define CTRL_QUIT_GAME     key == 'Q'
 
-// Will print parsing debug info and parsed data to terminal if defined
+// will print parsing debug info and parsed data to terminal, if defined
 // #define VERBOSE_POKEDEX
 
 // Places that pokedex database will be looked for (ending with a slash)
@@ -136,5 +136,8 @@
 
 // maximum items per item type
 #define MAX_ITEMS 999
+
+// show ivs in pokemon summary view if defined
+// #define POKEMON_SUMMARY_SHOW_IVS
 
 #endif

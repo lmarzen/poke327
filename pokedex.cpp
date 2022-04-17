@@ -526,6 +526,7 @@ void init_pd_type_name() {
   bool success = false;
   int32_t i = 0;
   char *tmp[3];
+  int32_t len;
 
   fname = CONCAT(POKEDEX_DB_PATH_1,POKEDEX_TYPE_NAMES_PATH);
 
@@ -561,6 +562,11 @@ void init_pd_type_name() {
         tmp[0] = next_token(line, ',');
         tmp[1] = next_token(NULL, ',');
         tmp[2] = next_token(NULL, ',');
+
+        // remove newline character from type name string
+        len = strlen(tmp[2]);
+        if (len > 0 && tmp[2][len-1] == '\n') 
+          tmp[2][len-1] = '\0';
 
         // only include english type names, language_id == 9
         if (!strcmp(tmp[1],"9") ) {

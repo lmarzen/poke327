@@ -22,6 +22,7 @@ Region *region_ptr[WORLD_SIZE][WORLD_SIZE] = {NULL};
 Pc *pc;
 int32_t dist_map_hiker[MAX_ROW][MAX_COL];
 int32_t dist_map_rival[MAX_ROW][MAX_COL];
+heap_t move_queue;
 
 void usage(const char *argv0) {
   std::cout << "Usage: " << argv0 << " [--numtrainers|--seed] <int>" 
@@ -111,7 +112,6 @@ int main (int argc, char *argv[])
 
   pc->pick_starter_driver();
   
-  heap_t move_queue;
   Character *c;
   init_trainer_pq(&move_queue, region_ptr[pc->get_x()][pc->get_y()]);
   recalculate_dist_maps(region_ptr[pc->get_x()][pc->get_y()], 
@@ -122,7 +122,7 @@ int main (int argc, char *argv[])
   gettimeofday(&time_last_frame, NULL);
 
   // Run game
-  while(!pc->is_quit_game()) { 
+  while(true) { 
     if (pc->get_x() != loaded_region_x || pc->get_y() != loaded_region_y) {
       load_region(pc->get_x(), pc->get_y(), numtrainers_opt);
       init_trainer_pq(&move_queue, region_ptr[pc->get_x()][pc->get_y()]);
@@ -144,16 +144,15 @@ int main (int argc, char *argv[])
       int32_t step = ((Character*)heap_peek_min(&move_queue))->get_movetime();
       if (step <= TICKS_PER_FRAME) {
         step_all_movetimes(region_ptr[loaded_region_x][loaded_region_y], step);
-        while( ((Character*) heap_peek_min(&move_queue))->get_movetime() == 0 ) {
+        while( ((Character*) heap_peek_min(&move_queue))->get_movetime() == 0 ) 
+        {
           c = (Character*) heap_remove_min(&move_queue);
           c->process_movement_turn();
           heap_insert(&move_queue, c);
-          if (pc->is_quit_game() || pc->get_x() != loaded_region_x 
-                                 || pc->get_y() != loaded_region_y)
+          if (pc->get_x() != loaded_region_x || pc->get_y() != loaded_region_y)
             break;
         }
-        if (pc->is_quit_game() || pc->get_x() != loaded_region_x 
-                               || pc->get_y() != loaded_region_y)
+        if (pc->get_x() != loaded_region_x || pc->get_y() != loaded_region_y)
           break;
       } else {
         step = TICKS_PER_FRAME;
@@ -178,9 +177,7 @@ int main (int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////
   }
 
-  endwin();
-  heap_delete(&move_queue);
-  free_all_regions();
+  quit_game();
 
   return 0;
 }

@@ -61,17 +61,17 @@ void Character::process_movement_turn() {
     process_input_nav();
     break;
   case tnr_hiker:
-    if (!defeated) {
+    if (!defeated && !pc->is_defeated()) {
       move_along_gradient(this, dist_map_hiker);
     }
     break;
   case tnr_rival:
-    if (!defeated) {
+    if (!defeated && !pc->is_defeated()) {
       move_along_gradient(this, dist_map_rival);
     }
     break;
   case tnr_pacer:
-    if (defeated) {
+    if (defeated || pc->is_defeated()) {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
@@ -86,7 +86,7 @@ void Character::process_movement_turn() {
     }
     break;
   case tnr_wanderer:
-    if (defeated) {
+    if (defeated || pc->is_defeated()) {
       // do nothing
       } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
               && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
@@ -107,7 +107,7 @@ void Character::process_movement_turn() {
     // Do nothing
     break;
   case tnr_rand_walker:
-    if (defeated) {
+    if (defeated || pc->is_defeated()) {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
@@ -187,24 +187,47 @@ bag_slot_t Character::peek_bag_slot(int32_t index) {
  * Return 1 if pokemon was successfully added to the party, 0 otherwise
  */
 int32_t Character::add_pokemon(Pokemon *p) {
-  if (party.size() < 6) {
+  if (party_size < 6) {
     p->set_has_owner(true);
-    party.push_back(*p);
+    party[party_size] = p;
+    ++party_size;
     return 1;
   }
   return 0;
 }
 Pokemon* Character::get_pokemon(int32_t i) {
-  return &party[i];
+  if (i < 0 || i > party_size) {
+    return NULL;
+  }
+  return party[i];
 }
-int32_t Character::party_size() {
-  return party.size();
+int32_t Character::get_party_size() {
+  return party_size;
+}
+/*
+ * Returns a pointer to the first non-fainted pokemon in
+ */
+Pokemon* Character::get_active_pokemon() {
+  for (int32_t i = 0; i < party_size; ++i)
+    if (!party[i]->is_fainted())
+      return party[i];
+  return NULL;
 }
 const char* Character::get_nickname() {
   return nickname;
 }
 void Character::rename(char new_name[12]) {
   strncpy(nickname, new_name, 12);
+  return;
+}
+void Character::switch_pokemon(int32_t a, int32_t b) {
+  if (a < 0 || a >= party_size || b < 0 || b >= party_size || a == b)
+    return;
+
+  Pokemon *tmp = party[a];
+  party[a] = party[b];
+  party[b] = tmp;
+  return;
 }
 
 
@@ -221,6 +244,7 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   reg_x = r_x;
   reg_y = r_y;
   movetime = 0;
+  party_size = 0;
   strncpy(nickname, "PLAYER", 12);
   
   // get pointer to present region from global variables
@@ -250,7 +274,8 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
 }
 
 Pc::~Pc() {
-  party.clear();
+  for (int32_t i = 0; i < party_size; ++i)
+    free(party[i]);
 }
 
 int32_t Pc::get_x() {
@@ -258,13 +283,6 @@ int32_t Pc::get_x() {
 }
 int32_t Pc::get_y() {
   return reg_y;
-}
-bool Pc::is_quit_game() {
-  return quit_game;
-}
-void Pc::set_quit_game(bool q) {
-  quit_game = q;
-  return;
 }
 
 void Pc::pick_starter_driver() {
@@ -287,6 +305,12 @@ void Pc::pick_starter_driver() {
     add_pokemon(p3);
   }
 
+  add_pokemon(new Pokemon());
+  add_pokemon(new Pokemon());
+  add_pokemon(new Pokemon());
+  add_pokemon(new Pokemon());
+  add_pokemon(new Pokemon());
+
   return;
 }
 
@@ -301,6 +325,7 @@ Npc::Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime) {
   pos_j = j;
   movetime = init_movetime;
   this->tnr = tnr;
+  party_size = 0;
 
   switch (tnr) {
     case tnr_hiker:
@@ -347,5 +372,6 @@ Npc::Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime) {
 }
 
 Npc::~Npc() {
-  party.clear();
+  for (int32_t i = 0; i < party_size; ++i)
+    free(party[i]);
 }
