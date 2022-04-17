@@ -39,4 +39,5 @@
              Fixed bug that selecting a starter would not show next screen.
 04/13/2022 - Added battle screen.
 04/14/2022 - Implemented encounter battle mechanics.
+04/15/2022 - Implemented item mechanics for potions, pokeballs, and revives.
 04/16/2022 - Added pokemon summary view.
