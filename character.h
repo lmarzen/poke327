@@ -89,6 +89,7 @@ class Character {
     bag_slot_t peek_bag_slot(int32_t index);
     int32_t add_pokemon(Pokemon *p);
     Pokemon* get_pokemon(int32_t i);
+    int32_t get_active_pokemon_index();
     Pokemon* get_active_pokemon();
     int32_t get_party_size();
     const char* get_nickname();

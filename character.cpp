@@ -75,7 +75,7 @@ void Character::process_movement_turn() {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_trainer_driver(this, pc);
+      battle_driver(pc, this);
     } else if (is_valid_location(pos_i + dir_offsets[dir][0], 
                                  pos_j + dir_offsets[dir][1], 
                                  tnr)) {
@@ -90,7 +90,7 @@ void Character::process_movement_turn() {
       // do nothing
       } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
               && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_trainer_driver(this, pc);
+      battle_driver(pc, this);
     } else if ((r->get_ter(pos_i + dir_offsets[dir][0], 
                            pos_j + dir_offsets[dir][1])
              == r->get_ter(pos_i                      , 
@@ -111,7 +111,7 @@ void Character::process_movement_turn() {
       // do nothing
     } else if (pc->get_i() == (pos_i + dir_offsets[dir][0])
             && pc->get_j() == (pos_j + dir_offsets[dir][1])) {
-      battle_trainer_driver(this, pc);
+      battle_driver(pc, this);
     } else if (is_valid_location(pos_i + dir_offsets[dir][0],
                                  pos_j + dir_offsets[dir][1], tnr)) {
       pos_i += dir_offsets[dir][0];
@@ -205,7 +205,18 @@ int32_t Character::get_party_size() {
   return party_size;
 }
 /*
- * Returns a pointer to the first non-fainted pokemon in
+ * Returns the index of the first non-fainted pokemon in party,
+ * -1 if all are fainted
+ */
+int32_t Character::get_active_pokemon_index() {
+  for (int32_t i = 0; i < party_size; ++i)
+    if (!party[i]->is_fainted())
+      return i;
+  return -1;
+}
+/*
+ * Returns a pointer to the first non-fainted pokemon in party, 
+ * NULL if all are fainted
  */
 Pokemon* Character::get_active_pokemon() {
   for (int32_t i = 0; i < party_size; ++i)
@@ -220,6 +231,9 @@ void Character::rename(char new_name[12]) {
   strncpy(nickname, new_name, 12);
   return;
 }
+/*
+ * Switches the order of pokemon in a trainers party
+ */
 void Character::switch_pokemon(int32_t a, int32_t b) {
   if (a < 0 || a >= party_size || b < 0 || b >= party_size || a == b)
     return;
@@ -288,14 +302,34 @@ int32_t Pc::get_y() {
 void Pc::pick_starter_driver() {
   int32_t scroller_pos = 0;
   int32_t selected_pokemon = 0;
+  
   Pokemon *p1 = new Pokemon();
   Pokemon *p2 = new Pokemon();
+  // ensure no duplicate starter options
+  while (p2->get_pd_entry()->id == p1->get_pd_entry()->id) {
+    delete p2;
+    p2 = new Pokemon();
+  }
   Pokemon *p3 = new Pokemon();
+  // ensure no duplicate starter options
+  while (p3->get_pd_entry()->id == p1->get_pd_entry()->id
+      || p3->get_pd_entry()->id == p2->get_pd_entry()->id) {
+    delete p3;
+    p3 = new Pokemon();
+  }
 
   while (!selected_pokemon) {
     render_pick_starter(scroller_pos, p1, p2, p3);
     process_input_pick_starter(&scroller_pos, &selected_pokemon);
   }
+
+  // clean up starters that were not picked
+  if (selected_pokemon != 1)
+    delete p1;
+  if (selected_pokemon != 2)
+    delete p2;
+  if (selected_pokemon != 3)
+    delete p3;
 
   if (selected_pokemon == 1) {
     add_pokemon(p1);
@@ -304,12 +338,6 @@ void Pc::pick_starter_driver() {
   } else if (selected_pokemon == 3) {
     add_pokemon(p3);
   }
-
-  add_pokemon(new Pokemon());
-  add_pokemon(new Pokemon());
-  add_pokemon(new Pokemon());
-  add_pokemon(new Pokemon());
-  add_pokemon(new Pokemon());
 
   return;
 }

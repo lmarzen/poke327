@@ -140,4 +140,9 @@
 // show ivs in pokemon summary view if defined
 // #define POKEMON_SUMMARY_SHOW_IVS
 
+// The chance a trainer has n+1 pokemon. (0-100)%
+#define TRAINER_EXTRA_POKEMON_CHANCE 60
+// Time in microseconds between using a move and seeing the applied damage
+#define BATTLE_ANIMATION_TIME 250000
+
 #endif

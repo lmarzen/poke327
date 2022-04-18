@@ -223,12 +223,19 @@ void render_battle_message(const char* m) {
   }
   
   mvprintw(12, 0, m);
-  
   refresh();
+}
+
+/*
+ * Updates the battle message and waits for next key
+ */
+void render_battle_message_getch(const char* m) {
+  render_battle_message(m);
+  
   // also wait for keypress
   usleep(FRAMETIME);
   flushinp();
-  getch();
+  getch_next();
 }
 
 /*
@@ -258,7 +265,7 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
     addch('f');
     attroff(COLOR_PAIR(COLOR_MAGENTA));
   }             
-  mvprintw(2, 20 - digits(p_opp->get_level()), "Lv.%d", p_opp->get_level());
+  mvprintw(2, 21 - digits(p_opp->get_level()), "Lv.%d", p_opp->get_level());
   mvprintw(3, 2, "HP");
   if (p_opp->get_current_hp() < p_opp->get_stat(stat_hp) / 5) {
     color = CHAR_COLOR_HEALTH_LOW;
@@ -292,7 +299,7 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
     addch('f');
     attroff(COLOR_PAIR(COLOR_MAGENTA));
   }     
-  mvprintw(7, 20 - (p_pc->get_level()/10), "Lv.%d", p_pc->get_level());
+  mvprintw(7, 21 - digits(p_pc->get_level()), "Lv.%d", p_pc->get_level());
   mvprintw(8, 2, "HP");
   if (p_pc->get_current_hp() < p_pc->get_stat(stat_hp) / 5) {
     color = CHAR_COLOR_HEALTH_LOW;
@@ -356,6 +363,16 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
   return;
 }
 
+void render_battle_getch(Pokemon *p_pc, Pokemon *p_opp,
+                         const char* message, bool show_menu,
+                         int32_t scroller_pos, bool selected_fight) {
+  render_battle(p_pc, p_opp, message, show_menu, scroller_pos, selected_fight);
+
+  usleep(FRAMETIME);
+  flushinp();
+  getch_next();
+}
+
 void render_party_message(const char *m) {
   // if (display_options) {
   //   move(10, 0);
@@ -375,7 +392,7 @@ void render_party_message(const char *m) {
   // also wait for keypress
   usleep(FRAMETIME);
   flushinp();
-  getch();
+  getch_next();
 }
 
 void render_party(int32_t selected_p1, int32_t selected_p2, 
@@ -423,7 +440,7 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
       addch('f');
       attroff(COLOR_PAIR(COLOR_MAGENTA));
     }     
-    mvprintw(i + j, 20 - (p->get_level()/10), "Lv.%d", p->get_level());
+    mvprintw(i + j, 21 - digits(p->get_level()), "Lv.%d", p->get_level());
     mvprintw(i + j, 26, "HP");
     if (p->get_current_hp() < p->get_stat(stat_hp) / 5) {
       color = CHAR_COLOR_HEALTH_LOW;
@@ -492,6 +509,16 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
   return;
 }
 
+void render_party_getch(int32_t selected_p1, int32_t selected_p2, 
+                        int32_t selected_opt, 
+                        const char *m, const char *o1, const char *o2) {
+  render_party(selected_p1, selected_p2, selected_opt, m, o1, o2);
+
+  usleep(FRAMETIME);
+  flushinp();
+  getch_next();
+}
+
 void render_summary(Pokemon *p) {
   clear();
 
@@ -511,6 +538,8 @@ void render_summary(Pokemon *p) {
     addch('f');
     attroff(COLOR_PAIR(COLOR_MAGENTA));
   }
+
+  mvprintw(0, 19 - digits(p->get_level()), "Lv.%d", p->get_level());
 
   mvprintw(1, 0, "DEX NO.: %d %s", p->get_pd_entry()->id, 
                                    p->get_pd_entry()->identifier);
@@ -669,13 +698,10 @@ void render_bag_message(const char *m) {
               pc->num_bag_slots() + 2 : MAX_ROW - 2;
   move(i, 0);
   clrtoeol();
-  mvprintw(6, 0, m);
-  
+  printw(m);
   refresh();
   // also wait for keypress
-  usleep(FRAMETIME);
-  flushinp();
-  getch();
+  getch_next();
 }
 
 /*
@@ -733,7 +759,7 @@ void render_pick_starter(int32_t scroller_pos,
 }
 
 /*
- * Process user input while in an encounter
+ * Process user input while in a battle
  */
 void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos, 
                           bool *selected_fight, bool *pc_turn) {
@@ -884,8 +910,8 @@ void process_input_tnr_overlay(int32_t *scroller_pos, int32_t *close_overlay) {
  * Returns 1 if turn was used, 0 otherwise
  */
 void process_input_party(int32_t scenario,
-                            int32_t *selected_p1, int32_t *selected_p2, 
-                            int32_t *selected_opt, int32_t *close_party) {
+                         int32_t *selected_p1, int32_t *selected_p2, 
+                         int32_t *selected_opt, int32_t *close_party) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
@@ -945,8 +971,26 @@ void process_input_party(int32_t scenario,
       } else if (*selected_opt == 0 && *selected_p2 == -1) {
         if (scenario == 1 || scenario == 2) {
           // selected SHIFT/SEND OUT
-          *close_party = 1;
-          no_op = 0;
+          int32_t active_p = pc->get_active_pokemon_index();
+          if (pc->get_pokemon(*selected_p1)->is_fainted()) {
+            char m[MAX_COL];
+            sprintf(m, "%s has no energy left to battle!", 
+                    pc->get_pokemon(*selected_p1)->get_nickname());
+            render_party_message(m);
+            no_op = 0;
+          } else if (active_p == *selected_p1 && scenario == 1) {
+            char m[MAX_COL];
+            sprintf(m, "%s is already in battle!", 
+                    pc->get_pokemon(active_p)->get_nickname());
+            render_party_message(m);
+            // pokemon is already active
+            no_op = 0;
+          } else {
+            // swap active and selected
+            pc->switch_pokemon(active_p, *selected_p1);
+            *close_party = 1;
+            no_op = 0;
+          }
         } else {
           // selected SHIFT
           *selected_p2 = (*selected_p1 == 0 ? 1 : 0);
@@ -954,8 +998,15 @@ void process_input_party(int32_t scenario,
         }
       } else if (*selected_opt == 0 && *selected_p2 != -1) {
         // selected second pokemon to shift
-        *close_party = 1;
-        no_op = 0;
+        if (pc->get_party_size() < 2) {
+          *selected_p2 = -1;
+          no_op = 0;
+        } else {  
+          pc->switch_pokemon(*selected_p1, *selected_p2);
+          *selected_opt = -1;
+          *selected_p2 = -1;
+          no_op = 0;
+        }
       } else if (*selected_opt == 1 && *selected_p2 == -1) {
         // selected SUMMARY
         render_summary(pc->get_pokemon(*selected_p1));
@@ -1145,7 +1196,8 @@ void process_input_nav() {
       tnr_overlay_driver();
       render_region(r);
     } else if (CTRL_OPEN_BAG) {
-      bag_driver();
+      item_t selected_item = bag_driver();
+      use_item(pc, NULL, NULL, selected_item);
       render_region(r);
     } else if (CTRL_VIEW_PARTY) {
       party_view_driver(0);
@@ -1171,12 +1223,14 @@ void exit_w_message(const char* message) {
   exit(-1);
 }
 
-void getch_select() {
+void getch_next() {
   int32_t key;
   flushinp();
   while (true) {
     key = getch();
     if (CTRL_SELECT) {
+      return;
+    } else if (CTRL_BACK) {
       return;
     } else if (CTRL_QUIT_GAME) {
       quit_game();
