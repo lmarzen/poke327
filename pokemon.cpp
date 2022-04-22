@@ -157,7 +157,7 @@ void Pokemon::calculate_stats() {
 Pokemon::Pokemon() {
   // pointer arithmetic to select a random pokemon in the pd_pokemon array
   pd_entry = pd_pokemon + (rand() % POKEDEX_POKEMON_ENTRIES);
-  strncpy(nickname, pd_entry->identifier, 30);
+  strncpy(nickname, pd_entry->identifier, 12);
 
   generate_level();
   populate_moveset();
@@ -179,7 +179,7 @@ pd_pokemon_t* Pokemon::get_pd_entry() {
 const char* Pokemon::get_nickname() {
   return nickname;
 }
-void Pokemon::rename(char new_name[12]) {
+void Pokemon::rename(char new_name[13]) {
   strncpy(nickname, new_name, 12);
 }
 int32_t Pokemon::get_level() {

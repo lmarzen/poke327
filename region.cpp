@@ -457,7 +457,8 @@ void Region::populate(int32_t num_tnrs)
         // give new trainer some pokemon 
         // at least 1, then 60% chance for n+1 pokemon, max of 6 pokemon
         npc_arr.back().add_pokemon(new Pokemon());
-        while (rand() % 100 < 60 && npc_arr.back().get_party_size() < 6) {
+        while (rand() % 100 < TRAINER_EXTRA_POKEMON_CHANCE
+            && npc_arr.back().get_party_size() < 6) {
           npc_arr.back().add_pokemon(new Pokemon());
         }
 

@@ -453,7 +453,8 @@ void battle_driver(Pc *pc, Character *opp) {
         end_battle = 1;
       } else if (pc_active->is_fainted()) {
         // player pokemon fainted... use next pokemon
-        pc_active = pc->get_pokemon(party_view_driver(2));
+        party_view_driver(2);
+        pc_active = pc->get_pokemon(0);
         sprintf(m, "Go! %s!", pc_active->get_nickname());
         render_battle_getch(pc_active, opp_active, m, false, 0, 0);
       } else if (opp == NULL) {

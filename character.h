@@ -69,7 +69,7 @@ class Character {
     std::vector<bag_slot_t> bag;
     Pokemon* party[6];
     int32_t party_size;
-    char nickname[12];
+    char nickname[13];
     
   public:
     int32_t get_movetime();

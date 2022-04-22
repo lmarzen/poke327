@@ -971,23 +971,24 @@ void process_input_party(int32_t scenario,
       } else if (*selected_opt == 0 && *selected_p2 == -1) {
         if (scenario == 1 || scenario == 2) {
           // selected SHIFT/SEND OUT
-          int32_t active_p = pc->get_active_pokemon_index();
+          // int32_t active_p = pc->get_active_pokemon_index();
+          // assume position 0 is active pokemon
           if (pc->get_pokemon(*selected_p1)->is_fainted()) {
             char m[MAX_COL];
             sprintf(m, "%s has no energy left to battle!", 
                     pc->get_pokemon(*selected_p1)->get_nickname());
             render_party_message(m);
             no_op = 0;
-          } else if (active_p == *selected_p1 && scenario == 1) {
+          } else if (0 == *selected_p1 && scenario == 1) {
             char m[MAX_COL];
             sprintf(m, "%s is already in battle!", 
-                    pc->get_pokemon(active_p)->get_nickname());
+                    pc->get_pokemon(0)->get_nickname());
             render_party_message(m);
             // pokemon is already active
             no_op = 0;
           } else {
             // swap active and selected
-            pc->switch_pokemon(active_p, *selected_p1);
+            pc->switch_pokemon(0, *selected_p1);
             *close_party = 1;
             no_op = 0;
           }
@@ -999,6 +1000,25 @@ void process_input_party(int32_t scenario,
       } else if (*selected_opt == 0 && *selected_p2 != -1) {
         // selected second pokemon to shift
         if (pc->get_party_size() < 2) {
+          // No pokemon to switch with
+          *selected_p2 = -1;
+          no_op = 0;
+        } else if (pc->get_pokemon(*selected_p1)->is_fainted() 
+                    && *selected_p2 == 0) {
+          // trying to switch a fainted pokemon to slot 0.
+          char m[MAX_COL];
+          sprintf(m, "%s has no energy left!", 
+                  pc->get_pokemon(*selected_p1)->get_nickname());
+          render_party_message(m);
+          *selected_p2 = -1;
+          no_op = 0;
+        } else if (pc->get_pokemon(*selected_p2)->is_fainted()
+                    && *selected_p1 == 0) {
+          // trying to switch a fainted pokemon to slot 0.
+          char m[MAX_COL];
+          sprintf(m, "%s has no energy left!", 
+                  pc->get_pokemon(*selected_p2)->get_nickname());
+          render_party_message(m);
           *selected_p2 = -1;
           no_op = 0;
         } else {  

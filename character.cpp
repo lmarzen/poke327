@@ -227,7 +227,7 @@ Pokemon* Character::get_active_pokemon() {
 const char* Character::get_nickname() {
   return nickname;
 }
-void Character::rename(char new_name[12]) {
+void Character::rename(char new_name[13]) {
   strncpy(nickname, new_name, 12);
   return;
 }

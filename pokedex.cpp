@@ -22,7 +22,7 @@ pd_pokemon_move_t pd_pokemon_moves[POKEDEX_POKEMON_MOVES_ENTRIES];
 pd_pokemon_species_t pd_pokemon_species[POKEDEX_POKEMON_SPECIES_ENTRIES];
 pd_pokemon_stat_t pd_pokemon_stats[POKEDEX_POKEMON_STATS_ENTRIES];
 pd_experience_t pd_experience[POKEDEX_EXPERIENCE_ENTRIES];
-char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][30];
+char pd_type_names[POKEDEX_TYPE_NAMES_ENTRIES][11];
 pd_pokemon_type_t pd_pokemon_types[POKEDEX_POKEMON_TYPES_ENTRIES];
 
 
@@ -172,7 +172,7 @@ void init_pd_moves() {
         pd_moves[i].id = atoi((tmp = next_token(line, ',')));
         tmp = next_token(NULL, ',');
         toupper(tmp);
-        strncpy(pd_moves[i].identifier, tmp, 30);
+        strncpy(pd_moves[i].identifier, tmp, 32);
         tmp = next_token(NULL, ',');
         pd_moves[i].generation_id = *tmp ? atoi(tmp) : -1;
         tmp = next_token(NULL, ',');
@@ -335,7 +335,7 @@ void init_pd_pokemon_species() {
         pd_pokemon_species[i].id = atoi((tmp = next_token(line, ',')));
         tmp = next_token(NULL, ',');
         toupper(tmp);
-        strncpy(pd_pokemon_species[i].identifier, tmp, 30);
+        strncpy(pd_pokemon_species[i].identifier, tmp, 12);
         tmp = next_token(NULL, ',');
         pd_pokemon_species[i].generation_id = *tmp ? atoi(tmp) : -1;
         tmp = next_token(NULL, ',');
@@ -573,7 +573,7 @@ void init_pd_type_name() {
           // we only care about col 2 since we are assuming the order 
           // corresponds with type_id
           toupper(tmp[2]);
-          strncpy(pd_type_names[i], tmp[2], 30);
+          strncpy(pd_type_names[i], tmp[2], 10);
           ++i;
         }
       }
