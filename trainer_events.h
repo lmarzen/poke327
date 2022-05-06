@@ -28,6 +28,9 @@ int32_t process_pc_move_attempt(direction_t dir);
 int32_t party_view_driver(int32_t scenario);
 int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
                  item_t item);
+int32_t select_move_driver(Pokemon *p, pd_move_t *new_move, 
+                           const char *m1, const char *m2, 
+                           const char *m_cancel);
 
 
 

@@ -154,6 +154,7 @@
 #define START_MAX_ELIXIR    10
 #define START_REVIVE        10
 #define START_MAX_REVIVE    10
+#define START_RARE_CANDY    10
 
 // show ivs in pokemon summary view if defined
 // #define POKEMON_SUMMARY_SHOW_IVS

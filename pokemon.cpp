@@ -270,30 +270,33 @@ bool Pokemon::process_level_up() {
           // 2b. Move found now there are two cases
           //     Open teach pokemon view
           
-          char m1[MAX_COL], m2[MAX_COL];
+          char m1[MAX_COL], m2[MAX_COL], m_cancel[MAX_COL];
           if (num_moves < 4) {
             // 2ba. No player choice, move is learned in first available slot
             learn_move(&pd_moves[i]);
             sprintf(m1, "%s learned %s!", nickname, pd_moves[i].identifier);
-            render_teach_move_getch(this, NULL, -1, m1, NULL);
+            render_select_move_getch(this, NULL, -1, m1, NULL, NULL);
           } else {
             // 2bb. Player must select move to forget
-            int32_t close_view = 0;
-            int32_t scroller_pos = 0;
             sprintf(m1, "%s wants to learn the move %s.",
                     nickname, pd_moves[i].identifier);
             sprintf(m2, "Which move should be forgotten?");
-            while (!close_view) {
-              render_teach_move(this, &pd_moves[i], scroller_pos, m1, m2);
-              process_input_teach_move(this, &scroller_pos, &close_view);
-            }
+            sprintf(m_cancel, "STOP LEARNING %s", pd_moves[i].identifier);
+            int32_t scroller_pos = 
+              select_move_driver(this, &pd_moves[i], m1, m2, m_cancel);
 
             if (scroller_pos < num_moves && scroller_pos >= 0) {
+              // player choose to replace a move
               sprintf(m2, "%s forgot %s and... learned %s",
                     nickname, get_move(scroller_pos)->identifier, 
                     pd_moves[i].identifier);
               overwrite_move(scroller_pos, &pd_moves[i]);
-              render_teach_move_getch(this, &pd_moves[i], -1, m1, m2);
+              render_select_move_getch(this, &pd_moves[i], -1, m1, m2, NULL);
+            } else if (scroller_pos == num_moves) {
+              // cancel was selected
+              sprintf(m2, "%s did not learn %s.",
+                    nickname, pd_moves[i].identifier);
+              render_select_move_getch(this, &pd_moves[i], -1, m1, m2, NULL);
             }
             
           }
@@ -400,6 +403,18 @@ bool Pokemon::has_pp() {
       return true;
   return false;
 }
+bool Pokemon::has_all_pp() {
+  for (int32_t i = 0; i < num_moves; ++i)
+    if (current_pp[i] != moveset[i]->pp)
+      return false;
+  return true;
+}
+void Pokemon::restore_all_pp(int32_t amount) {
+  for (int32_t i = 0; i < num_moves; ++i)
+    restore_pp(i, amount);
+  return;
+}
+
 gender_t Pokemon::get_gender() {
   return gender;
 }
@@ -581,7 +596,7 @@ int32_t experience_gain(Pokemon *opp) {
   float t = 1; // Trading is not implemented.
   float s = 1; // We will use 1 because we are giving all the experience to the
                //   pokemon that knocked out the opponent.
-  return (a * t * b * e) / (7 * s);
+  return (a * t * b * e) / (7 * s) + 100000;
 
 
 }

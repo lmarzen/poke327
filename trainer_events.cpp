@@ -110,14 +110,32 @@ bool is_catch_success(item_t ball, Pokemon *opp) {
 }
 
 /*
+ * Drives move selection of a specific pokemon
+ * Returns scroller position.
+ * 
+ */
+int32_t select_move_driver(Pokemon *p, pd_move_t *new_move, 
+                           const char *m1, const char *m2, 
+                           const char *m_cancel) {
+  int32_t close_view = 0;
+  int32_t scroller_pos = 0;
+  while (!close_view) {
+    render_select_move(p, new_move, scroller_pos, m1, m2, m_cancel);
+    process_input_select_move(p, &scroller_pos, &close_view);
+  }
+  return scroller_pos;
+}
+
+/*
  * Return value indicates if the action counts as the user's turn.
  * 0 indicates that the user has used its turn, 1 if the action does not count
  * as the user's turn.
  */
 int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
                  item_t item) {
-  char m[MAX_COL];
+  char m1[MAX_COL];
   int32_t poke_index;
+  int32_t move_index;
   int32_t old_hp;
   int32_t heal_amount = 0;
 
@@ -131,26 +149,26 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         user->remove_item_from_bag(item);
         if (opp_poke->get_has_owner()) {
           // We are in a battle with another trainer
-          sprintf(m, "%s", catch_illegal_txt[rand() % NUM_CATCH_ILLEGAL_TXT]);
-          render_battle_message_getch(m);
+          sprintf(m1, "%s", catch_illegal_txt[rand() % NUM_CATCH_ILLEGAL_TXT]);
+          render_battle_message_getch(m1);
         } else {
           // We are in a battle with a wild encounter
-          sprintf(m, "%s used %s", user->get_nickname(), item_name_txt[item]);
-          render_battle_message_getch(m);
+          sprintf(m1, "%s used %s", user->get_nickname(), item_name_txt[item]);
+          render_battle_message_getch(m1);
           if (is_catch_success(item, opp_poke)) {
-            sprintf(m, "Gotcha! %s was caught!", opp_poke->get_nickname());
-            render_battle_message_getch(m);
+            sprintf(m1, "Gotcha! %s was caught!", opp_poke->get_nickname());
+            render_battle_message_getch(m1);
             if (user->get_party_size() < 6) {
               user->add_pokemon(opp_poke);
             } else {
               // TODO: pokemon PC box mechanics. sent to box
-              sprintf(m, "%s will be sent to BOX %d.", 
+              sprintf(m1, "%s will be sent to BOX %d.", 
                       opp_poke->get_nickname(), 1);
-              render_battle_message_getch(m);
+              render_battle_message_getch(m1);
             }
           } else {
-            sprintf(m, "Oh, no! The POKEMON broke free!");
-            render_battle_message_getch(m);
+            sprintf(m1, "Oh, no! The POKEMON broke free!");
+            render_battle_message_getch(m1);
           }
         }
         return 0;
@@ -192,10 +210,10 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         heal_amount = INT_MAX;
       }
       user->get_pokemon(poke_index)->heal(heal_amount);
-      sprintf(m, "%s's HP was restored by %d points.", 
+      sprintf(m1, "%s's HP was restored by %d points.", 
               user->get_pokemon(poke_index)->get_nickname(), 
               user->get_pokemon(poke_index)->get_current_hp() - old_hp);
-      render_party_getch(poke_index, -1, -1, m, 0, 0);
+      render_party_getch(poke_index, -1, -1, m1, 0, 0);
       return 0;
     case item_revive:
     case item_max_revive:
@@ -217,18 +235,102 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         heal_amount = INT_MAX;
       }
       user->get_pokemon(poke_index)->heal(heal_amount);
-      sprintf(m, "%s's HP was restored by %d points.", 
+      sprintf(m1, "%s's HP was restored by %d points.", 
               user->get_pokemon(poke_index)->get_nickname(),
               user->get_pokemon(poke_index)->get_current_hp());
-      render_party_getch(poke_index, -1, -1, m, 0, 0);
+      render_party_getch(poke_index, -1, -1, m1, 0, 0);
       user->set_defeated(false);
       return 0;
+    case item_ether:
+    case item_max_ether:
+      poke_index = party_view_driver(3 /*Select pokemon for item*/);
+      if (poke_index == -1) {
+        // user cancel
+        return 1;
+      }
+      move_index = select_move_driver(user->get_pokemon(poke_index), NULL, 
+                                      "Restore which move?", NULL, "CANCEL");
+      if (move_index < user->get_pokemon(poke_index)->get_num_moves()
+        && move_index >= 0) {
+        // user selected a valid move to restore pp to.
+        if (item == item_ether) {
+          heal_amount = 10;
+        } else if (item == item_max_ether) {
+          heal_amount = INT32_MAX;
+        }
+        if (user->get_pokemon(poke_index)->get_current_pp(move_index)
+          == user->get_pokemon(poke_index)->get_move(move_index)->pp) {
+          // PP for this move is full
+          render_select_move_getch(user->get_pokemon(poke_index), NULL, -1, 
+                                   "It won't have any effect.", NULL, NULL);
+          return 1;
+        }
+        user->get_pokemon(poke_index)->restore_pp(move_index, heal_amount);
+        user->remove_item_from_bag(item);
+        render_select_move_getch(user->get_pokemon(poke_index), NULL, -1, 
+                                 "PP was restored", NULL, NULL);
+        return 0;
+      } else if (move_index == user->get_pokemon(poke_index)->get_num_moves()) {
+        // user cancel
+        return 1;
+      }
+      return 1;
+    case item_elixir:
+    case item_max_elixir:
+      poke_index = party_view_driver(3 /*Select pokemon for item*/);
+      if (poke_index == -1) {
+        // user cancel
+        return 1;
+      }
+      // user selected a valid pokemon to attempt to restore pp to.
+      // check that pokemon has at least 1 missing pp
+      if (!user->get_pokemon(poke_index)->has_all_pp()) {
+        if (item == item_elixir) {
+          heal_amount = 10;
+        } else if (item == item_max_elixir) {
+          heal_amount = INT32_MAX;
+        }
+        user->get_pokemon(poke_index)->restore_all_pp(heal_amount);
+        user->remove_item_from_bag(item);
+        render_party_getch(poke_index, -1, -1, "PP was restored", 0, 0);
+        return 0;
+      } else {
+        render_party_getch(poke_index, -1, -1, 
+                           "It won't have any effect.", 0, 0);
+        return 1;
+      }
+      return 1;
+    case item_rare_candy:
+      if (opp_poke == NULL) {
+        // We are not in battle.
+        poke_index = party_view_driver(3 /*Select pokemon for item*/);
+        if (poke_index == -1) {
+          // user cancel
+          return 1;
+        }
+        if (user->get_pokemon(poke_index)->get_level() >= POKEMON_MAX_LEVEL) {
+          // pokemon is not fainted
+          render_party_message("It won't have any effect.");
+          return 1;
+        }
+        user->remove_item_from_bag(item);
+        // level up pokemon
+        int32_t exp_gain = user->get_pokemon(poke_index)->get_exp_next_level();
+        user->get_pokemon(poke_index)->give_exp(exp_gain);
+        user->get_pokemon(poke_index)->process_level_up();
+        
+        sprintf(m1, "%s's level rose to %d.", 
+                user->get_pokemon(poke_index)->get_nickname(),
+                user->get_pokemon(poke_index)->get_level());
+        render_party_getch(poke_index, -1, -1, m1, 0, 0);
+      } else {
+        // We are in battle! Rare candy cannot be used in battle.
+        render_battle_message_getch("Can't use that here.");
+      }
+      return 1;
     default:
      return 1;
-  }
-
-  // we will never reach here
-  return 1;
+  } // end switch
 }
 
 /*

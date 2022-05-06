@@ -323,6 +323,7 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   add_item_to_bag(item_max_elixir,   START_MAX_ELIXIR);
   add_item_to_bag(item_revive,       START_REVIVE);
   add_item_to_bag(item_max_revive,   START_MAX_REVIVE);
+  add_item_to_bag(item_rare_candy,   START_RARE_CANDY);
 }
 
 Pc::~Pc() {

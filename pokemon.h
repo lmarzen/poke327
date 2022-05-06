@@ -94,6 +94,8 @@ class Pokemon {
     int32_t use_pp(int32_t move_slot);
     int32_t restore_pp(int32_t m, int32_t amount);
     bool has_pp();
+    bool has_all_pp();
+    void restore_all_pp(int32_t amount);
     gender_t get_gender();
     bool is_shiny();
     int32_t get_type(int32_t slot);

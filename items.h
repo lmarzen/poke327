@@ -19,6 +19,7 @@ typedef enum item {
   item_max_elixir,
   item_revive,
   item_max_revive,
+  item_rare_candy,
   num_items
 } item_t;
 
@@ -36,7 +37,8 @@ const char item_name_txt[num_items][13] {
   "ELIXIR",
   "MAX ELIXIR",
   "REVIVE",
-  "MAX REVIVE"
+  "MAX REVIVE",
+  "RARE CANDY"
 };
 
 const char item_desc_txt[num_items * 2][MAX_COL + 1] {
@@ -80,8 +82,11 @@ const char item_desc_txt[num_items * 2][MAX_COL + 1] {
   "A medicine that revives a fainted Pokemon, restoring HP by half the maximum",
   "amount.",
   // MAX REVIVE
-  "A medicine that revives a fainted Pokemon, restoring HP fully."
+  "A medicine that revives a fainted Pokemon, restoring HP fully.",
   "",
+  // RARE CANDY
+  "A candy that is packed with energy. It raises the level of a Pokemon by one.",
+  ""
 };
 
 typedef struct bag_slot {

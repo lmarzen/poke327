@@ -829,8 +829,8 @@ void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos,
  * new_move is null then the new_move info won't be displayed
  * If scroller_pos is -1, then scroller will not be displayed
  */
-void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos, 
-                       const char *m1, const char *m2) {
+void render_select_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos, 
+                       const char *m1, const char *m2, const char *m_cancel) {
   clear();
   if (m1 != NULL)
     mvprintw(0, 0, m1);
@@ -870,8 +870,6 @@ void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos,
                                type_name(p->get_move(3)->type_id));
   }
   if (new_move != NULL) {
-    mvprintw(7,2, "Stop learning %s.", new_move->identifier);
-
     mvprintw(9,0, "%s", new_move->identifier);
     mvprintw(9,20, "PP");
     mvprintw(9,27 - digits(p->get_current_pp(3)) - digits(new_move->pp), 
@@ -881,7 +879,11 @@ void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos,
   }
 
   if (scroller_pos != -1) {
-    for (int32_t i = 0; i <= 4; ++i) {
+    if (m_cancel != NULL) {
+      mvprintw(3 + p->get_num_moves(),2, m_cancel);
+    }
+
+    for (int32_t i = 0; i <= p->get_num_moves(); ++i) {
       if (scroller_pos == i) {
         mvaddch(i + 3, 0, CHAR_CURSOR);
       } else {
@@ -894,18 +896,19 @@ void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos,
   return;
 }
 
-void render_teach_move_getch(Pokemon *p, pd_move_t *new_move, 
+void render_select_move_getch(Pokemon *p, pd_move_t *new_move, 
                              int32_t scroller_pos, 
-                             const char *m1, const char *m2) {
-  render_teach_move(p, new_move, scroller_pos, m1, m2);
+                             const char *m1, const char *m2, 
+                             const char *m_cancel) {
+  render_select_move(p, new_move, scroller_pos, m1, m2, m_cancel);
 
   usleep(FRAMETIME);
   flushinp();
   getch_next();
 }
 
-void process_input_teach_move(Pokemon *p, int32_t *scroller_pos, 
-                              int32_t *close_view) {
+void process_input_select_move(Pokemon *p, int32_t *scroller_pos, 
+                               int32_t *close_view) {
   uint32_t no_op = 1;
   int32_t key = 0;
 
