@@ -710,17 +710,18 @@ void render_bag_message(const char *m) {
  */
 void render_bag(int32_t page_index, int32_t scroller_pos) { 
   int32_t i;
-  bag_slot_t s;
+  bag_slot_t s, selected_slot;
 
   clear(); 
   attron(A_BOLD);
   mvprintw(0,0,"Bag");
   attroff(A_BOLD);
 
-  for (i = 0; (i < pc->num_bag_slots() && i < MAX_ROW); ++i) {
+  for (i = 0; (i < pc->num_bag_slots() && i < MAX_ROW - 3); ++i) {
     s = pc->peek_bag_slot(i + page_index);
     if (i == scroller_pos - page_index) {
       mvaddch(i + 1,0, CHAR_CURSOR);
+      selected_slot = pc->peek_bag_slot(i + page_index); 
     } else {
       mvaddch(i + 1,0, CHAR_SCROLL_BAR);
     }
@@ -728,7 +729,10 @@ void render_bag(int32_t page_index, int32_t scroller_pos) {
     mvprintw(i + 1, 2, "%3dx %s", s.cnt, item_name_txt[s.item]);
   }
 
-  mvprintw(i + 2,0,"Choose an ITEM.");
+  mvprintw(i + 2,0, item_desc_txt[selected_slot.item * 2]);
+  mvprintw(i + 3,0, item_desc_txt[selected_slot.item * 2 + 1]);
+
+  mvprintw(i + 5,0,"Choose an ITEM.");
   refresh();
   return;
 }

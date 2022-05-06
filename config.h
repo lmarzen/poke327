@@ -139,6 +139,21 @@
 
 // maximum items per item type
 #define MAX_ITEMS 999
+// How many of each item should the play start the game with...
+#define START_POKE_BALL     10
+#define START_GREAT_BALL    10
+#define START_ULTRA_BALL    10
+#define START_MASTER_BALL   10
+#define START_POTION        10
+#define START_SUPER_POTION  10
+#define START_HYPER_POTION  10
+#define START_MAX_POTION    10
+#define START_ETHER         10
+#define START_MAX_ETHER     10
+#define START_ELIXIR        10
+#define START_MAX_ELIXIR    10
+#define START_REVIVE        10
+#define START_MAX_REVIVE    10
 
 // show ivs in pokemon summary view if defined
 // #define POKEMON_SUMMARY_SHOW_IVS

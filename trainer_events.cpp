@@ -77,6 +77,39 @@ item_t bag_driver() {
 }
 
 /*
+ * Determines if a catch is successful
+ * https://bulbapedia.bulbagarden.net/wiki/Catch_rate#Capture_method_.28Generation_III-IV.29
+ */
+bool is_catch_success(item_t ball, Pokemon *opp) {
+  float bonus_ball;
+  switch (ball) {
+    case item_poke_ball:
+      bonus_ball = 1;
+      break;
+    case item_great_ball:
+      bonus_ball = 1.5;
+      break;
+    case item_ultra_ball:
+      bonus_ball = 2;
+      break;
+    case item_master_ball:
+      // master ball has 100% catch rate
+      // bonus_ball = 255;
+      return true;
+    default:
+      // this item is not a poke ball
+      return false;
+  }
+  
+  float bonus_status = 1; // status effects are not implemented
+  int32_t a = ( (3 * opp->get_base_stat(stat_hp) - 2 * opp->get_current_hp())
+                * opp->get_pd_species_entry()->capture_rate * bonus_ball)
+              / (3.0 * opp->get_base_stat(stat_hp)) 
+              * bonus_status;
+  return (rand() % 256) <= a;
+}
+
+/*
  * Return value indicates if the action counts as the user's turn.
  * 0 indicates that the user has used its turn, 1 if the action does not count
  * as the user's turn.
@@ -86,9 +119,13 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
   char m[MAX_COL];
   int32_t poke_index;
   int32_t old_hp;
+  int32_t heal_amount = 0;
 
   switch (item) {
-    case item_pokeball:
+    case item_poke_ball:
+    case item_great_ball:
+    case item_ultra_ball:
+    case item_master_ball:
       if (opp_poke != NULL) {
         // we are in a battle
         user->remove_item_from_bag(item);
@@ -100,16 +137,19 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
           // We are in a battle with a wild encounter
           sprintf(m, "%s used %s", user->get_nickname(), item_name_txt[item]);
           render_battle_message_getch(m);
-          // TODO: catch mechanics. (currently always success)
-          // sprintf(m, "Oh, no! The POKEMON broke free!"); 
-          sprintf(m, "Gotcha! %s was caught!", opp_poke->get_nickname());
-          render_battle_message_getch(m);
-          if (user->get_party_size() < 6) {
-            user->add_pokemon(opp_poke);
+          if (is_catch_success(item, opp_poke)) {
+            sprintf(m, "Gotcha! %s was caught!", opp_poke->get_nickname());
+            render_battle_message_getch(m);
+            if (user->get_party_size() < 6) {
+              user->add_pokemon(opp_poke);
+            } else {
+              // TODO: pokemon PC box mechanics. sent to box
+              sprintf(m, "%s will be sent to BOX %d.", 
+                      opp_poke->get_nickname(), 1);
+              render_battle_message_getch(m);
+            }
           } else {
-            // TODO: pokemon PC box mechanics. sent to box
-            sprintf(m, "%s will be sent to BOX %d.", 
-                    opp_poke->get_nickname(), 1);
+            sprintf(m, "Oh, no! The POKEMON broke free!");
             render_battle_message_getch(m);
           }
         }
@@ -120,6 +160,9 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
       }
       return 1;
     case item_potion:
+    case item_super_potion:
+    case item_hyper_potion:
+    case item_max_potion:
       poke_index = party_view_driver(3 /*Select pokemon for item*/);
       if (poke_index == -1) {
         // user cancel
@@ -138,13 +181,24 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
       }
       user->remove_item_from_bag(item);
       old_hp = user->get_pokemon(poke_index)->get_current_hp();
-      user->get_pokemon(poke_index)->heal(20);
+      heal_amount = 0;
+      if (item == item_potion) {
+        heal_amount = 20;
+      } else if (item == item_super_potion) {
+        heal_amount = 50;
+      } else if (item == item_hyper_potion) {
+        heal_amount = 200;
+      } else if (item == item_max_potion) {
+        heal_amount = INT_MAX;
+      }
+      user->get_pokemon(poke_index)->heal(heal_amount);
       sprintf(m, "%s's HP was restored by %d points.", 
               user->get_pokemon(poke_index)->get_nickname(), 
               user->get_pokemon(poke_index)->get_current_hp() - old_hp);
       render_party_getch(poke_index, -1, -1, m, 0, 0);
       return 0;
     case item_revive:
+    case item_max_revive:
       poke_index = party_view_driver(3 /*Select pokemon for item*/);
       if (poke_index == -1) {
         // user cancel
@@ -156,11 +210,16 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         return 1;
       }
       user->remove_item_from_bag(item);
-      user->get_pokemon(poke_index)->heal(
-        user->get_pokemon(poke_index)->get_stat(stat_hp) / 2);
+      heal_amount = 0;
+      if (item == item_revive) {
+        heal_amount = user->get_pokemon(poke_index)->get_stat(stat_hp) / 2;
+      } else if (item == item_max_revive) {
+        heal_amount = INT_MAX;
+      }
+      user->get_pokemon(poke_index)->heal(heal_amount);
       sprintf(m, "%s's HP was restored by %d points.", 
               user->get_pokemon(poke_index)->get_nickname(),
-              user->get_pokemon(poke_index)->get_stat(stat_hp) / 2);
+              user->get_pokemon(poke_index)->get_current_hp());
       render_party_getch(poke_index, -1, -1, m, 0, 0);
       user->set_defeated(false);
       return 0;

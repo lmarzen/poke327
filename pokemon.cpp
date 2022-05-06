@@ -497,14 +497,13 @@ int32_t move_priority(int32_t move_priority_1, int32_t poke_speed_1,
  * Returns the type effectiveness multiplier of a move against another pokemon
  */
 float effectiveness(pd_move_t *attacking_move, Pokemon *defender) {
-  // TODO
   int32_t atk_tid = attacking_move->type_id - 1;
   int32_t def_tid_0 = defender->get_type(0) - 1;
   int32_t def_tid_1 = defender->get_type(1) - 1;
   
-  int32_t eff = type_effectiveness[atk_tid][def_tid_0];
+  float eff = type_effectiveness[atk_tid][def_tid_0];
   // if pokemon has two types
-  if (def_tid_1 > -1) {
+  if (def_tid_1 >= 0) {
     eff *= type_effectiveness[atk_tid][def_tid_1];
   }
   return eff;

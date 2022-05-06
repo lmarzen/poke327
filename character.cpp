@@ -309,9 +309,20 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   movetime = turn_times[r->get_ter(pos_i, pos_j)][tnr];
 
   // give the player starting items
-  add_item_to_bag(item_potion, 10);
-  add_item_to_bag(item_revive, 10);
-  add_item_to_bag(item_pokeball, 10);
+  add_item_to_bag(item_poke_ball,    START_POKE_BALL);
+  add_item_to_bag(item_great_ball,   START_GREAT_BALL);
+  add_item_to_bag(item_ultra_ball,   START_ULTRA_BALL);
+  add_item_to_bag(item_master_ball,  START_MASTER_BALL);
+  add_item_to_bag(item_potion,       START_POTION);
+  add_item_to_bag(item_super_potion, START_SUPER_POTION);
+  add_item_to_bag(item_hyper_potion, START_HYPER_POTION);
+  add_item_to_bag(item_max_potion,   START_MAX_POTION);
+  add_item_to_bag(item_ether,        START_ETHER);
+  add_item_to_bag(item_max_ether,    START_MAX_ETHER);
+  add_item_to_bag(item_elixir,       START_ELIXIR);
+  add_item_to_bag(item_max_elixir,   START_MAX_ELIXIR);
+  add_item_to_bag(item_revive,       START_REVIVE);
+  add_item_to_bag(item_max_revive,   START_MAX_REVIVE);
 }
 
 Pc::~Pc() {
