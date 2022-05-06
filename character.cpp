@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <ncurses.h>
@@ -243,7 +244,33 @@ void Character::switch_pokemon(int32_t a, int32_t b) {
   party[b] = tmp;
   return;
 }
-
+/*
+ * Calculate a character's payout for losing in battle
+ * Using gen II mechanics
+ * https://bulbapedia.bulbagarden.net/wiki/Prize_money
+ */
+int32_t Character::get_payout() {
+  int32_t p;
+  if (tnr != tnr_pc) {
+    p = base_payout[tnr] * party[party_size - 1]->get_level();
+  } else {
+    // player character
+    int32_t dist = m_dist(WORLD_SIZE/2, WORLD_SIZE/2, pc->get_x(), pc->get_y());
+    // custom formula to increase payout with distance
+    int32_t base = 4 * pow(dist, 0.7835) + 16;
+    int32_t level = 1;
+    for (int32_t i = 0; i < party_size; ++i) {
+      if (party[i]->get_level() > level) {
+        level = party[i]->get_level();
+      }
+    }
+    p = base * level;
+    if (p > pc->get_poke_dollars()) {
+      p = pc->get_poke_dollars();
+    }
+  }
+  return p;
+}
 
 /*******************************************************************************
 * Player Character (Pc) Sub-Class
@@ -339,6 +366,21 @@ void Pc::pick_starter_driver() {
     add_pokemon(p3);
   }
 
+  return;
+}
+
+int32_t Pc::get_poke_dollars() {
+  return poke_dollars;
+}
+void Pc::give_poke_dollars(int32_t amount) {
+  poke_dollars += amount;
+  return;
+}
+void Pc::take_poke_dollars(int32_t amount) {
+  poke_dollars -= amount;
+  if (poke_dollars < 0) {
+    poke_dollars = 0;
+  }
   return;
 }
 

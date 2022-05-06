@@ -45,3 +45,5 @@
 05/05/2022 - Implemented type effectiveness.
              Pokemon can now level up.
              Pokemon will now learn moves one levelup.
+05/06/2022 - Pokemon now gain exp for fainting pokemon.
+05/06/2022 - Added poke dollars. Trainers will now payout poke dollars on defeat.

@@ -112,5 +112,6 @@ int32_t calculate_damage(Pokemon *attacker, pd_move_t *attacking_move,
                          Pokemon *defender, bool is_critical);
 bool is_critical(Pokemon *attacker, pd_move_t *attacking_move);
 bool is_miss(pd_move_t *attacking_move);
+int32_t experience_gain(Pokemon *opp);
 
 #endif

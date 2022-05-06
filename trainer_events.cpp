@@ -455,7 +455,7 @@ void battle_driver(Pc *pc, Character *opp) {
     if (pokemon_fainted) {
       // give exp and level up
       if (opp_active->is_fainted()) {
-        int32_t exp_gain = 37;
+        int32_t exp_gain = experience_gain(opp_active);
         int32_t exp_for_this_level;
         sprintf(m, "%s gained %d EXP. Points!", pc_active->get_nickname()
                                               , exp_gain);
@@ -479,6 +479,12 @@ void battle_driver(Pc *pc, Character *opp) {
 
       if (pc->is_defeated()) {
         // player defeated... end battle
+        sprintf(m, "%s is out of usable POKEMON!", pc->get_nickname());
+        render_battle_message_getch(m);
+        int32_t payout = pc->get_payout();
+        pc->take_poke_dollars(payout);
+        sprintf(m, "%s panicked and lost $%d!", pc->get_nickname(), payout);
+        render_battle_message_getch(m);
         sprintf(m, "%s whited out!", pc->get_nickname());
         render_battle_message_getch(m);
         end_battle = 1;
@@ -502,6 +508,10 @@ void battle_driver(Pc *pc, Character *opp) {
           opp->set_defeated(true);
           sprintf(m, "%s defeated %s", pc->get_nickname(), opp->get_nickname());
           render_battle_getch(pc_active, opp_active, m, false, 0, 0);
+          int32_t payout = opp->get_payout();
+          pc->give_poke_dollars(payout);
+          sprintf(m, "%s got $%d for winning!", pc->get_nickname(), payout);
+          render_battle_message_getch(m);
           end_battle = 1;
         } else {
           // opponent pokemon fainted... use next pokemon

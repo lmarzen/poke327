@@ -19,19 +19,23 @@ typedef enum trainer {
 } trainer_t;
 
 static const int32_t turn_times[11][7] = {
-                  /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
-  /* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_boulder  */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_tree     */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_center   */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_mart     */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_path     */ {     10,      10,      10,      10,      10,      10,      10},
-  /* ter_grass    */ {     20,      15,      20,      20,      20,      20,      20},
-  /* ter_clearing */ {     10,      10,      10,      10,      10,      10,      10},
-  /* ter_mountain */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_forest   */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-  /* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX}
+                /*       PC,   Hiker,   Rival,   Pacer, Wandere, Station,  Walker*/
+/* ter_border   */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_boulder  */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_tree     */ {INT_MAX,      10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_center   */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_mart     */ {     10, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_path     */ {     10,      10,      10,      10,      10,      10,      10},
+/* ter_grass    */ {     20,      15,      20,      20,      20,      20,      20},
+/* ter_clearing */ {     10,      10,      10,      10,      10,      10,      10},
+/* ter_mountain */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_forest   */ {INT_MAX,      15, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+/* ter_mixed    */ {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX}
 };
+
+static const int32_t base_payout[7] =
+              /*   PC Hik Riv Pac Wan Sta Wal*/
+/* base payout*/ { -1, 36, 36, 16, 16, 20, 12};
 
 typedef enum direction {
   dir_n,
@@ -95,6 +99,7 @@ class Character {
     const char* get_nickname();
     void rename(char new_name[12]);
     void switch_pokemon(int32_t a, int32_t b);
+    int32_t get_payout();
 
   friend void move_along_gradient(Character *c, 
                                   int32_t dist_map[MAX_ROW][MAX_COL]);
@@ -104,6 +109,7 @@ class Character {
 class Pc : public Character {
   int32_t reg_x;
   int32_t reg_y;
+  int32_t poke_dollars;
 
   public:
     Pc(int32_t r_x, int32_t r_y);
@@ -112,6 +118,9 @@ class Pc : public Character {
     int32_t get_x();
     int32_t get_y();
     void pick_starter_driver();
+    int32_t get_poke_dollars();
+    void give_poke_dollars(int32_t amount);
+    void take_poke_dollars(int32_t amount);
 
   friend int32_t process_pc_move_attempt(direction_t dir);
   friend void pc_next_region(int32_t to_rx,   int32_t to_ry, 
@@ -125,6 +134,5 @@ class Npc : public Character {
     Npc(trainer_t tnr, int32_t i, int32_t j, int32_t init_movetime);
     ~Npc();
 };
-
   
 #endif

@@ -566,3 +566,23 @@ bool is_miss (pd_move_t *attacking_move) {
     return false;
   return !( (rand() % 100) < attacking_move->accuracy );
 }
+
+/*
+ * Calculates and returns the amount of experience gained from defeating a
+ * pokemon.
+ * 
+ * Uses the flat formula that applies up to Gen IV and in Gen VI
+ * We will follow the rules for Gen III.
+ * https://bulbapedia.bulbagarden.net/wiki/Experience
+ */
+int32_t experience_gain(Pokemon *opp) {
+  float a = opp->get_has_owner() ? 1.5 : 1;
+  float b = opp->get_pd_entry()->base_experience;
+  float e = 1; // Lucky egg is not implemented.
+  float t = 1; // Trading is not implemented.
+  float s = 1; // We will use 1 because we are giving all the experience to the
+               //   pokemon that knocked out the opponent.
+  return (a * t * b * e) / (7 * s);
+
+
+}

@@ -8,8 +8,10 @@ and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 
 TODO:
 done.Add type effectiveness
-Add Pokemon experience
-Add Player money and trainer drop money
+done.Add Pokemon experience/levelup
+done. pokemon need to earn exp from defeating opponent
+done. Add Player money and trainer drop money
+
 Add different pokeball types
 Add pokeball catch mechanics
 Add Pokemart
