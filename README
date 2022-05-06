@@ -1,15 +1,26 @@
+from ast import Store
+
+
 Description
 ---
 The player can navigate procedurally generated regions, engage in trainer battles and encounter wild pokemon. Pokedex database files will be searched for 
 and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 
-The player can access a pokemon summary menu and bag menu in and out of battle.
+TODO:
+Add type effectiveness
+Add Pokemon experience
+Add Player money and trainer drop money
+Add different pokeball types
+Add pokeball catch mechanics
+Add Pokemart
+      buy/sell pokeballs
+Add Pokecenter
+      heal
+      store pokemon
+Save Game mechanic
 
 Note: Status effects are not implemented, and by extension status moves are not
       implement and are programmed to always miss.
-Note: Assignment called for 'b' command to open the player's bag. Since 'b' is
-      already mapped to the control 'Down-Left', a capital 'B' is instead used 
-      to open the bag.
 
 Key
 ---
