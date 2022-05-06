@@ -317,8 +317,8 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
   mvprintw(9, 17,"%3d/%3d", p_pc->get_current_hp(), p_pc->get_stat(stat_hp));
   mvprintw(10, 2, "EXP");
   attron(COLOR_PAIR(CHAR_COLOR_EXP));
-  for (int32_t e = 19 * 0 /*TODO: p_pc->get_level_up_exp()*/; e > 0; 
-       e -= p_pc->get_exp()) {
+  for (int32_t e = 19 * p_pc->get_exp(); e > 0; 
+       e -= p_pc->get_exp_next_level()) {
     addch(CHAR_EXP);
   }
   attroff(COLOR_PAIR(CHAR_COLOR_EXP));
@@ -326,25 +326,25 @@ void render_battle(Pokemon *p_pc, Pokemon *p_opp,
   mvprintw(12, 0, message);
   
   if (show_menu) {
-    mvaddch(13, 0, (0 == scroller_pos ? '>' : ACS_VLINE));
+    mvaddch(13, 0, (0 == scroller_pos ? CHAR_CURSOR : CHAR_SCROLL_BAR));
     if (!selected_fight) {
       printw(" FIGHT");
     } else if (p_pc->get_num_moves() > 0) {
       printw(" %s", p_pc->get_move(0)->identifier);
     }
-    mvaddch(14, 0, (1 == scroller_pos ? '>' : ACS_VLINE));
+    mvaddch(14, 0, (1 == scroller_pos ? CHAR_CURSOR : CHAR_SCROLL_BAR));
     if (!selected_fight) {
       printw(" BAG");
     } else if (p_pc->get_num_moves() > 1) {
       printw(" %s", p_pc->get_move(1)->identifier);
     }
-    mvaddch(15, 0, (2 == scroller_pos ? '>' : ACS_VLINE));
+    mvaddch(15, 0, (2 == scroller_pos ? CHAR_CURSOR : CHAR_SCROLL_BAR));
       if (!selected_fight) {
       printw(" POKEMON");
     } else if (p_pc->get_num_moves() > 2) {
       printw(" %s", p_pc->get_move(2)->identifier);
     }
-    mvaddch(16, 0, (3 == scroller_pos ? '>' : ACS_VLINE));
+    mvaddch(16, 0, (3 == scroller_pos ? CHAR_CURSOR : CHAR_SCROLL_BAR));
     if (!selected_fight) {
       printw(" RUN");
     } else if (p_pc->get_num_moves() > 3) {
@@ -411,11 +411,12 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
     j = (i > selected_p1 && selected_opt != -1) ? 4 : 1;
     p = pc->get_pokemon(i);
     if (i == selected_p1) {
-      mvaddch(i + j, 0, selected_opt == -1 ? '>' : '-');
+      mvaddch(i + j, 0, selected_opt == -1 ? CHAR_CURSOR 
+                                           : CHAR_CURSOR_SELECTED);
     } else if (i == selected_p2) {
-      mvaddch(i + j, 0, '>');
+      mvaddch(i + j, 0, CHAR_CURSOR);
     } else if (selected_opt == -1 || selected_p2 != -1) {
-      mvaddch(i + j, 0, ACS_VLINE);
+      mvaddch(i + j, 0, CHAR_SCROLL_BAR);
     }
 
     if (p->is_shiny()) {
@@ -458,8 +459,8 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
     mvprintw(i + j, 40,"%3d/%3d", p->get_current_hp(), p->get_stat(stat_hp));
     mvprintw(i + j, 49, "EXP");
     attron(COLOR_PAIR(CHAR_COLOR_EXP));
-    for (int32_t e = 12 * 0 /*TODO: p->get_level_up_exp()*/; e > 0; 
-        e -= p->get_exp()) {
+    for (int32_t e = 12 * p->get_exp(); e > 0; 
+        e -= p->get_exp_next_level()) {
       addch(CHAR_EXP);
     }
     attroff(COLOR_PAIR(CHAR_COLOR_EXP));
@@ -468,20 +469,20 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
     if (selected_opt != -1 && i == selected_p1) {
       if (selected_opt == 0) {
         if (selected_p2 == -1) {
-          mvaddch(i + j + 1, 2, '>');
-          mvaddch(i + j + 2, 2, ACS_VLINE);
-          mvaddch(i + j + 3, 2, ACS_VLINE);
+          mvaddch(i + j + 1, 2, CHAR_CURSOR);
+          mvaddch(i + j + 2, 2, CHAR_SCROLL_BAR);
+          mvaddch(i + j + 3, 2, CHAR_SCROLL_BAR);
         } else {
-          mvaddch(i + j + 1, 2, '-');
+          mvaddch(i + j + 1, 2, CHAR_CURSOR_SELECTED);
         }
       } else if (selected_opt == 1) {
-        mvaddch(i + j + 1, 2, ACS_VLINE);
-        mvaddch(i + j + 2, 2, '>');
-        mvaddch(i + j + 3, 2, ACS_VLINE);
+        mvaddch(i + j + 1, 2, CHAR_SCROLL_BAR);
+        mvaddch(i + j + 2, 2, CHAR_CURSOR);
+        mvaddch(i + j + 3, 2, CHAR_SCROLL_BAR);
       }  else if (selected_opt == 2) {
-        mvaddch(i + j + 1, 2, ACS_VLINE);
-        mvaddch(i + j + 2, 2, ACS_VLINE);
-        mvaddch(i + j + 3, 2, '>');
+        mvaddch(i + j + 1, 2, CHAR_SCROLL_BAR);
+        mvaddch(i + j + 2, 2, CHAR_SCROLL_BAR);
+        mvaddch(i + j + 3, 2, CHAR_CURSOR);
       } 
       mvprintw(i + j + 1, 4, "%s", o1);
       mvprintw(i + j + 2, 4, "%s", o2);
@@ -489,9 +490,9 @@ void render_party(int32_t selected_p1, int32_t selected_p2,
     }
 
     // if (selected_p2 != -1 && i == selected_p1) {
-    //   mvaddch(i + j + 1, 0, ACS_VLINE);
-    //   mvaddch(i + j + 2, 0, ACS_VLINE);
-    //   mvaddch(i + j + 3, 0, ACS_VLINE);
+    //   mvaddch(i + j + 1, 0, CHAR_SCROLL_BAR);
+    //   mvaddch(i + j + 2, 0, CHAR_SCROLL_BAR);
+    //   mvaddch(i + j + 3, 0, CHAR_SCROLL_BAR);
     // }
   }
 
@@ -661,7 +662,7 @@ void render_tnr_overlay(int32_t scroller_pos) {
        i++) {
     Character *c = &r->get_npcs()->at(scroller_pos + i);
 
-    mvaddch(i + 1,0, ACS_VLINE);
+    mvaddch(i + 1,0, CHAR_SCROLL_BAR);
     attron(COLOR_PAIR(c->get_color()));
     mvaddch(i + 1, 2, c->get_ch());
     attroff(COLOR_PAIR(c->get_color()));
@@ -719,9 +720,9 @@ void render_bag(int32_t page_index, int32_t scroller_pos) {
   for (i = 0; (i < pc->num_bag_slots() && i < MAX_ROW); ++i) {
     s = pc->peek_bag_slot(i + page_index);
     if (i == scroller_pos - page_index) {
-      mvaddch(i + 1,0, '>');
+      mvaddch(i + 1,0, CHAR_CURSOR);
     } else {
-      mvaddch(i + 1,0, ACS_VLINE);
+      mvaddch(i + 1,0, CHAR_SCROLL_BAR);
     }
     
     mvprintw(i + 1, 2, "%3dx %s", s.cnt, item_name_txt[s.item]);
@@ -744,14 +745,14 @@ void render_pick_starter(int32_t scroller_pos,
   attroff(A_BOLD);
   
 
-  mvaddch(2,0, ACS_VLINE);
+  mvaddch(2,0, CHAR_SCROLL_BAR);
   mvprintw(2, 2, "%s  Lv.%d", p1->get_nickname(), p1->get_level());
-  mvaddch(3,0, ACS_VLINE);
+  mvaddch(3,0, CHAR_SCROLL_BAR);
   mvprintw(3, 2, "%s  Lv.%d", p2->get_nickname(), p2->get_level());
-  mvaddch(4,0, ACS_VLINE);
+  mvaddch(4,0, CHAR_SCROLL_BAR);
   mvprintw(4, 2, "%s  Lv.%d", p3->get_nickname(), p3->get_level());
 
-  mvaddch(2 + scroller_pos,0, '>');
+  mvaddch(2 + scroller_pos,0, CHAR_CURSOR);
 
   mvprintw(6,0,"Press Enter to select a pokemon");
   refresh();
@@ -812,6 +813,127 @@ void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos,
         *scroller_pos = 0;
         no_op = 0;
       }
+    } else if (CTRL_QUIT_GAME) {
+      quit_game();
+    }
+  }
+  return;
+}
+
+/*
+ * Render teach move screen
+ * new_move is null then the new_move info won't be displayed
+ * If scroller_pos is -1, then scroller will not be displayed
+ */
+void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos, 
+                       const char *m1, const char *m2) {
+  clear();
+  if (m1 != NULL)
+    mvprintw(0, 0, m1);
+  if (m2 != NULL)
+    mvprintw(2, 0, m2);
+
+  if (p->get_num_moves() > 0) {
+    mvprintw(3,2, "%s", p->get_move(0)->identifier);
+    mvprintw(3,22, "PP");
+    mvprintw(3,29 - digits(p->get_current_pp(0)) - digits(p->get_move(0)->pp), 
+             "%d/%d  type/%s", p->get_current_pp(0), 
+                               p->get_move(0)->pp,
+                               type_name(p->get_move(0)->type_id));
+  }
+  if (p->get_num_moves() > 1) {
+    mvprintw(4,2, "%s", p->get_move(1)->identifier);
+    mvprintw(4,22, "PP");
+    mvprintw(4,29 - digits(p->get_current_pp(1)) - digits(p->get_move(1)->pp), 
+             "%d/%d  type/%s", p->get_current_pp(1), 
+                               p->get_move(1)->pp,
+                               type_name(p->get_move(1)->type_id));
+  }
+  if (p->get_num_moves() > 2) {
+    mvprintw(5,2, "%s", p->get_move(2)->identifier);
+    mvprintw(5,22, "PP");
+    mvprintw(5,29 - digits(p->get_current_pp(2)) - digits(p->get_move(2)->pp), 
+             "%d/%d  type/%s", p->get_current_pp(2), 
+                               p->get_move(2)->pp,
+                               type_name(p->get_move(2)->type_id));
+  }
+  if (p->get_num_moves() > 3) {
+    mvprintw(6,2, "%s", p->get_move(3)->identifier);
+    mvprintw(6,22, "PP");
+    mvprintw(6,29 - digits(p->get_current_pp(3)) - digits(p->get_move(3)->pp), 
+             "%d/%d  type/%s", p->get_current_pp(3), 
+                               p->get_move(3)->pp,
+                               type_name(p->get_move(3)->type_id));
+  }
+  if (new_move != NULL) {
+    mvprintw(7,2, "Stop learning %s.", new_move->identifier);
+
+    mvprintw(9,0, "%s", new_move->identifier);
+    mvprintw(9,20, "PP");
+    mvprintw(9,27 - digits(p->get_current_pp(3)) - digits(new_move->pp), 
+             "%d/%d  type/%s", p->get_current_pp(3), 
+                               p->get_move(3)->pp,
+                               type_name(new_move->type_id));
+  }
+
+  if (scroller_pos != -1) {
+    for (int32_t i = 0; i <= 4; ++i) {
+      if (scroller_pos == i) {
+        mvaddch(i + 3, 0, CHAR_CURSOR);
+      } else {
+        mvaddch(i + 3, 0, CHAR_SCROLL_BAR);
+      }
+    }
+  }
+
+  refresh();
+  return;
+}
+
+void render_teach_move_getch(Pokemon *p, pd_move_t *new_move, 
+                             int32_t scroller_pos, 
+                             const char *m1, const char *m2) {
+  render_teach_move(p, new_move, scroller_pos, m1, m2);
+
+  usleep(FRAMETIME);
+  flushinp();
+  getch_next();
+}
+
+void process_input_teach_move(Pokemon *p, int32_t *scroller_pos, 
+                              int32_t *close_view) {
+  uint32_t no_op = 1;
+  int32_t key = 0;
+
+  /* Scroller layout
+   * 0 move 0
+   * 1 move 1
+   * 2 move 2
+   * 3 move 3
+   * 4 Give up trying to teach a new move to %s?
+   */
+
+  flushinp();
+  while (no_op)  {
+    key = getch();
+    if (CTRL_UP) {
+      if (*scroller_pos > 0) {
+        --(*scroller_pos); 
+        no_op = 0;
+      }
+    } else if (CTRL_DOWN) {
+      if (*scroller_pos < 4)
+       {
+        ++(*scroller_pos); 
+        no_op = 0;
+      }
+    } else if (CTRL_SELECT) {
+      *close_view = true; 
+      no_op = 0;
+    } else if (CTRL_BACK) {
+      *scroller_pos = 4; 
+      *close_view = true; 
+      no_op = 0;
     } else if (CTRL_QUIT_GAME) {
       quit_game();
     }

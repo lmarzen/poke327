@@ -43,3 +43,5 @@
 04/16/2022 - Added pokemon summary view.
 04/17/2022 - Implemented trainer battle mechanics.
 05/05/2022 - Implemented type effectiveness.
+             Pokemon can now level up.
+             Pokemon will now learn moves one levelup.

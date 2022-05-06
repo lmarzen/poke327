@@ -31,6 +31,13 @@ void render_party_message(const char* m);
 void render_summary(Pokemon *p);
 void render_bag(int32_t page_index, int32_t scroller_pos);
 void render_bag_message(const char *m);
+void render_teach_move(Pokemon *p, pd_move_t *new_move, int32_t scroller_pos, 
+                       const char *m1, const char *m2);
+void render_teach_move_getch(Pokemon *p, pd_move_t *new_move, 
+                             int32_t scroller_pos, 
+                             const char *m1, const char *m2);
+void process_input_teach_move(Pokemon *p, int32_t *scroller_pos, 
+                              int32_t *close_view);
 void render_pick_starter(int32_t scroller_pos, 
                          Pokemon *p1, Pokemon *p2, Pokemon *p3);
 void process_input_battle(Pokemon *p_pc, int32_t *scroller_pos, 

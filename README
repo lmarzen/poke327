@@ -7,7 +7,7 @@ The player can navigate procedurally generated regions, engage in trainer battle
 and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 
 TODO:
-Add type effectiveness
+done.Add type effectiveness
 Add Pokemon experience
 Add Player money and trainer drop money
 Add different pokeball types

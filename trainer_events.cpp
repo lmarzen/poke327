@@ -33,6 +33,13 @@ const char catch_illegal_txt[NUM_CATCH_ILLEGAL_TXT][MAX_COL] {
   "You missed the POKEMON!"
 };
 
+int min(int a, int b) {
+  return a <= b ? a : b;
+}
+int max(int a, int b) {
+  return a >= b ? a : b;
+}
+
 static int32_t movetime_cmp(const void *key, const void *with) {
   return ((Character *) key)->get_movetime() 
          - ((Character *) with)->get_movetime();
@@ -247,11 +254,11 @@ bool do_fight_turn(Pokemon *attacker, int32_t attacking_move_slot,
     render_battle_message(m);
     usleep(BATTLE_ANIMATION_TIME);
     render_battle_getch(pc_poke, opp_poke, m, false, 0, 0);
-    if (critical) {
+    type = effectiveness(attacker->get_move(attacking_move_slot), defender);
+    if (critical && type != 0) {
       sprintf(m, "A critical hit!");
       render_battle_getch(pc_poke, opp_poke, m, false, 0, 0);
     }
-    type = effectiveness(attacker->get_move(attacking_move_slot), defender);
     if (type > 1) {
       sprintf(m, "It's super effective!");
       render_battle_getch(pc_poke, opp_poke, m, false, 0, 0);
@@ -446,6 +453,30 @@ void battle_driver(Pc *pc, Character *opp) {
     }
 
     if (pokemon_fainted) {
+      // give exp and level up
+      if (opp_active->is_fainted()) {
+        int32_t exp_gain = 37;
+        int32_t exp_for_this_level;
+        sprintf(m, "%s gained %d EXP. Points!", pc_active->get_nickname()
+                                              , exp_gain);
+        render_battle_message_getch(m);
+        while (exp_gain > 0) {
+          exp_for_this_level = min(pc_active->get_exp_next_level(), exp_gain);
+          exp_gain -= exp_for_this_level;
+          pc_active->give_exp(exp_for_this_level);
+          usleep(BATTLE_ANIMATION_TIME);
+          render_battle(pc_active, opp_active, m, false, 0, 0);
+          if (pc_active->process_level_up()) {
+            usleep(BATTLE_ANIMATION_TIME);
+            // pokemon leveled up, 
+            // screen must be redrawn completely incase a new move was learned
+            sprintf(m, "%s grew to LV. %d!", pc_active->get_nickname()
+                                           , pc_active->get_level());
+            render_battle_getch(pc_active, opp_active, m, false, 0, 0);
+          }
+        }
+      }
+
       if (pc->is_defeated()) {
         // player defeated... end battle
         sprintf(m, "%s whited out!", pc->get_nickname());

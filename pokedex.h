@@ -21,7 +21,7 @@ typedef struct pd_pokemon {
 
 typedef struct pd_move {
   int16_t id;
-  char    identifier[33];
+  char    identifier[17];
   int32_t generation_id;
   int32_t type_id;
   int32_t power;

@@ -172,7 +172,7 @@ void init_pd_moves() {
         pd_moves[i].id = atoi((tmp = next_token(line, ',')));
         tmp = next_token(NULL, ',');
         toupper(tmp);
-        strncpy(pd_moves[i].identifier, tmp, 32);
+        strncpy(pd_moves[i].identifier, tmp, 16);
         tmp = next_token(NULL, ',');
         pd_moves[i].generation_id = *tmp ? atoi(tmp) : -1;
         tmp = next_token(NULL, ',');

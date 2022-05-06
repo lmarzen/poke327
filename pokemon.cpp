@@ -74,12 +74,13 @@ void Pokemon::populate_moveset() {
   for (int32_t i = 0; i < POKEDEX_POKEMON_MOVES_ENTRIES; ++i) {
     if ((pd_entry->species_id == pd_pokemon_moves[i].pokemon_id)
      && (level >= pd_pokemon_moves[i].level)) {
-      // check if move is already in moveset
+      // check if move is already in learnset
       bool is_dup = false;
       for (auto it  = levelup_learnset.begin(); 
                 it != levelup_learnset.end(); ++it) {
         if (*it == pd_pokemon_moves[i].move_id) {
           is_dup = true;
+          break;
         }
       }
 
@@ -89,8 +90,8 @@ void Pokemon::populate_moveset() {
     }
   }
 
-  // 3. Randomly select and assign up to 2 moves
-  while (levelup_learnset.size() > 0 && num_moves < 2) {
+  // 3. Randomly select and assign up to 4 moves
+  while (levelup_learnset.size() > 0 && num_moves < 4) {
     int32_t new_move_index = rand() % levelup_learnset.size();
 
     bool move_found = false;
@@ -156,8 +157,9 @@ void Pokemon::calculate_stats() {
  */
 Pokemon::Pokemon() {
   // pointer arithmetic to select a random pokemon in the pd_pokemon array
-  pd_entry = pd_pokemon + (rand() % POKEDEX_POKEMON_ENTRIES);
+  pd_entry = &pd_pokemon[rand() % POKEDEX_POKEMON_ENTRIES];
   strncpy(nickname, pd_entry->identifier, 12);
+  pd_species_entry = &pd_pokemon_species[pd_entry->id - 1];
 
   generate_level();
   populate_moveset();
@@ -166,7 +168,8 @@ Pokemon::Pokemon() {
   calculate_stats();
   lookup_type();
 
-  exp = 0;
+  exp = pd_experience[(pd_species_entry->growth_rate_id - 1) * 100 + level - 1]
+          .experience;
   current_hp = stats[stat_hp];
   gender = static_cast<gender_t>(rand() % 2);
   shiny = rand() % POKEMON_SHINY_RATE == 0 ? true : false;
@@ -175,6 +178,9 @@ Pokemon::Pokemon() {
 
 pd_pokemon_t* Pokemon::get_pd_entry() {
   return pd_entry;
+}
+pd_pokemon_species_t* Pokemon::get_pd_species_entry() {
+  return pd_species_entry;
 }
 const char* Pokemon::get_nickname() {
   return nickname;
@@ -185,12 +191,128 @@ void Pokemon::rename(char new_name[13]) {
 int32_t Pokemon::get_level() {
   return level;
 }
-int32_t Pokemon::get_exp() {
+int32_t Pokemon::get_total_exp() {
   return exp;
 }
+int32_t Pokemon::get_exp() {
+if (level >= POKEMON_MAX_LEVEL) {
+    return 0;
+  }
+  return 
+    exp
+    - pd_experience[(pd_species_entry->growth_rate_id - 1) * 100 + level - 1]
+      .experience;
+}
+int32_t Pokemon::get_total_exp_next_level() {
+  if (level >= POKEMON_MAX_LEVEL) {
+    return 0;
+  }
+  return 
+    pd_experience[(pd_species_entry->growth_rate_id - 1) * 100 + level]
+      .experience;
+}
 int32_t Pokemon::get_exp_next_level() {
-  // TODO
-  return 0;
+  if (level >= POKEMON_MAX_LEVEL) {
+    return 0;
+  }
+  return 
+    pd_experience[(pd_species_entry->growth_rate_id - 1) * 100 + level]
+      .experience
+    - pd_experience[(pd_species_entry->growth_rate_id - 1) * 100 + level - 1]
+        .experience;
+}
+void Pokemon::give_exp(int32_t amount) {
+  if (level < POKEMON_MAX_LEVEL) {
+    exp += amount;
+  }
+}
+bool Pokemon::process_level_up() { 
+  if (exp >= get_total_exp_next_level() && level < POKEMON_MAX_LEVEL) {
+    ++level;
+    int32_t old_hp = stats[stat_hp];
+    calculate_stats();
+    current_hp += stats[stat_hp] - old_hp;
+    
+    // 1. Find levelup learnset
+    std::vector<int32_t> levelup_learnset;
+    for (int32_t i = 0; i < POKEDEX_POKEMON_MOVES_ENTRIES; ++i) {
+      if ((pd_entry->species_id == pd_pokemon_moves[i].pokemon_id)
+      && (level == pd_pokemon_moves[i].level)) {
+        // check if move is already in learnset
+        bool is_dup = false;
+        for (auto it  = levelup_learnset.begin(); 
+                  it != levelup_learnset.end(); ++it) {
+          if (*it == pd_pokemon_moves[i].move_id) {
+            is_dup = true;
+            break;
+          }
+        }
+        // check if move is already in moveset
+        for (int32_t m = 0; m < num_moves; ++m) {
+          if (get_move(m)->id == pd_pokemon_moves[i].move_id) {
+            is_dup = true;
+            break;
+          }
+        }
+
+        if (!is_dup) {
+          levelup_learnset.push_back(pd_pokemon_moves[i].move_id);
+        }
+      }
+    }
+
+    // 2. Teach moves in learnset
+    while (levelup_learnset.size() > 0) {
+      // 2a. Find move in database
+      bool move_found = false;
+      for (int32_t i = 0; i < POKEDEX_MOVES_ENTRIES; ++i) {
+        if (pd_moves[i].id == levelup_learnset[0]) {
+          // 2b. Move found now there are two cases
+          //     Open teach pokemon view
+          
+          char m1[MAX_COL], m2[MAX_COL];
+          if (num_moves < 4) {
+            // 2ba. No player choice, move is learned in first available slot
+            learn_move(&pd_moves[i]);
+            sprintf(m1, "%s learned %s!", nickname, pd_moves[i].identifier);
+            render_teach_move_getch(this, NULL, -1, m1, NULL);
+          } else {
+            // 2bb. Player must select move to forget
+            int32_t close_view = 0;
+            int32_t scroller_pos = 0;
+            sprintf(m1, "%s wants to learn the move %s.",
+                    nickname, pd_moves[i].identifier);
+            sprintf(m2, "Which move should be forgotten?");
+            while (!close_view) {
+              render_teach_move(this, &pd_moves[i], scroller_pos, m1, m2);
+              process_input_teach_move(this, &scroller_pos, &close_view);
+            }
+
+            if (scroller_pos < num_moves && scroller_pos >= 0) {
+              sprintf(m2, "%s forgot %s and... learned %s",
+                    nickname, get_move(scroller_pos)->identifier, 
+                    pd_moves[i].identifier);
+              overwrite_move(scroller_pos, &pd_moves[i]);
+              render_teach_move_getch(this, &pd_moves[i], -1, m1, m2);
+            }
+            
+          }
+          
+          // 2c. Move has been handles now, Remove move from learnset
+          levelup_learnset.erase(levelup_learnset.begin());
+          move_found = true;
+          break;
+        }
+      }
+      if (!move_found) {
+        exit_w_message("Error: Move exists in learnset, but not in moves!");
+      }
+    }
+
+    return true;
+  } else {
+    return false;
+  }
 }
 pd_move_t* Pokemon::get_move(int32_t move_slot) {
   if (move_slot < 0 || move_slot > num_moves) {
@@ -220,6 +342,13 @@ void Pokemon::learn_move(pd_move_t *m) {
     moveset[num_moves] = m;
     current_pp[num_moves] = m->pp;
     ++num_moves;
+  }
+  return;
+}
+void Pokemon::overwrite_move(int32_t move_slot, pd_move_t *m) {
+  if (move_slot < num_moves && move_slot >= 0) {
+    moveset[move_slot] = m;
+    current_pp[move_slot] = m->pp;
   }
   return;
 }
