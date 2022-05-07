@@ -596,7 +596,7 @@ int32_t experience_gain(Pokemon *opp) {
   float t = 1; // Trading is not implemented.
   float s = 1; // We will use 1 because we are giving all the experience to the
                //   pokemon that knocked out the opponent.
-  return (a * t * b * e) / (7 * s) + 100000;
+  return (a * t * b * e) / (7 * s);
 
 
 }

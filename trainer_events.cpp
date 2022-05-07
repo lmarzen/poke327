@@ -146,7 +146,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
     case item_master_ball:
       if (opp_poke != NULL) {
         // we are in a battle
-        user->remove_item_from_bag(item);
+        user->remove_item_from_bag(item, 1);
         if (opp_poke->get_has_owner()) {
           // We are in a battle with another trainer
           sprintf(m1, "%s", catch_illegal_txt[rand() % NUM_CATCH_ILLEGAL_TXT]);
@@ -197,7 +197,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         render_party_message("It won't have any effect.");
         return 1;
       }
-      user->remove_item_from_bag(item);
+      user->remove_item_from_bag(item, 1);
       old_hp = user->get_pokemon(poke_index)->get_current_hp();
       heal_amount = 0;
       if (item == item_potion) {
@@ -227,7 +227,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
         render_party_message("It won't have any effect.");
         return 1;
       }
-      user->remove_item_from_bag(item);
+      user->remove_item_from_bag(item, 1);
       heal_amount = 0;
       if (item == item_revive) {
         heal_amount = user->get_pokemon(poke_index)->get_stat(stat_hp) / 2;
@@ -266,7 +266,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
           return 1;
         }
         user->get_pokemon(poke_index)->restore_pp(move_index, heal_amount);
-        user->remove_item_from_bag(item);
+        user->remove_item_from_bag(item, 1);
         render_select_move_getch(user->get_pokemon(poke_index), NULL, -1, 
                                  "PP was restored", NULL, NULL);
         return 0;
@@ -291,7 +291,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
           heal_amount = INT32_MAX;
         }
         user->get_pokemon(poke_index)->restore_all_pp(heal_amount);
-        user->remove_item_from_bag(item);
+        user->remove_item_from_bag(item, 1);
         render_party_getch(poke_index, -1, -1, "PP was restored", 0, 0);
         return 0;
       } else {
@@ -313,7 +313,7 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
           render_party_message("It won't have any effect.");
           return 1;
         }
-        user->remove_item_from_bag(item);
+        user->remove_item_from_bag(item, 1);
         // level up pokemon
         int32_t exp_gain = user->get_pokemon(poke_index)->get_exp_next_level();
         user->get_pokemon(poke_index)->give_exp(exp_gain);

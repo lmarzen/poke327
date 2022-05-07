@@ -31,6 +31,8 @@ int32_t use_item(Character *user, Pokemon *user_poke, Pokemon *opp_poke,
 int32_t select_move_driver(Pokemon *p, pd_move_t *new_move, 
                            const char *m1, const char *m2, 
                            const char *m_cancel);
+int min(int a, int b);
+int max(int a, int b);
 
 
 

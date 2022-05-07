@@ -89,6 +89,42 @@ const char item_desc_txt[num_items * 2][MAX_COL + 1] {
   ""
 };
 
+const int32_t item_cost[num_items] {
+    200, // POKE BALL
+    600, // GREAT BALL
+   1200, // ULTRA BALL
+  10000, // MASTER BALL
+    300, // POTION
+    700, // SUPER POTION
+   1200, // HYPER POTION
+   2500, // MAX POTION
+   1500, // ETHER
+   2500, // MAX ETHER
+   3500, // ELIXIR
+   5000, // MAX ELIXIR
+   1500, // REVIVE
+   5000, // MAX REVIVE
+   5000  // RARE CANDY
+};
+
+const int32_t item_sell_price[num_items] {
+   100, // POKE BALL
+   300, // GREAT BALL
+   600, // ULTRA BALL
+  1000, // MASTER BALL
+   150, // POTION
+   350, // SUPER POTION
+   600, // HYPER POTION
+  1250, // MAX POTION
+   600, // ETHER
+  1000, // MAX ETHER
+  1500, // ELIXIR
+  2250, // MAX ELIXIR
+   750, // REVIVE
+  2000, // MAX REVIVE
+  2400  // RARE CANDY
+};
+
 typedef struct bag_slot {
   item_t item;
   int32_t cnt;

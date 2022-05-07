@@ -138,10 +138,10 @@ int32_t Character::num_in_bag(item_t i) {
   }
   return 0;
 }
-void Character::remove_item_from_bag(item_t i) {
+void Character::remove_item_from_bag(item_t i, int32_t cnt) {
   for (auto it = bag.begin(); it != bag.end(); ++it) {
     if (it->item == i) {
-      --it->cnt;
+      it->cnt -= cnt;
       if (it->cnt < 1) {
         bag.erase(it);
       }
@@ -324,6 +324,8 @@ Pc::Pc(int32_t r_x, int32_t r_y) {
   add_item_to_bag(item_revive,       START_REVIVE);
   add_item_to_bag(item_max_revive,   START_MAX_REVIVE);
   add_item_to_bag(item_rare_candy,   START_RARE_CANDY);
+
+  poke_dollars = START_POKE_DOLLARS;
 }
 
 Pc::~Pc() {
@@ -385,6 +387,13 @@ int32_t Pc::get_poke_dollars() {
   return poke_dollars;
 }
 void Pc::give_poke_dollars(int32_t amount) {
+  if (amount > 999999) {
+    poke_dollars = 999999;
+    return;
+  } else if (amount + poke_dollars > 999999) {
+    poke_dollars = 999999;
+    return;
+  }
   poke_dollars += amount;
   return;
 }

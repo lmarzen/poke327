@@ -87,7 +87,7 @@ class Character {
     void set_defeated(bool d);
     void process_movement_turn();
     int32_t num_in_bag(item_t i);
-    void remove_item_from_bag(item_t i);
+    void remove_item_from_bag(item_t i, int32_t cnt);
     void add_item_to_bag(item_t i, int32_t cnt);
     int32_t num_bag_slots();
     bag_slot_t peek_bag_slot(int32_t index);

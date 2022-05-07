@@ -155,6 +155,8 @@
 #define START_REVIVE        10
 #define START_MAX_REVIVE    10
 #define START_RARE_CANDY    10
+// How privilaged is your pokemon trainer
+#define START_POKE_DOLLARS 100000
 
 // show ivs in pokemon summary view if defined
 // #define POKEMON_SUMMARY_SHOW_IVS

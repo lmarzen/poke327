@@ -623,9 +623,11 @@ void render_summary(Pokemon *p) {
  * Renders a poke center to the screen
  */
 void render_center() { 
-  clear(); 
-  mvprintw(0,0,"***Poke Center placeholder***");
-  mvprintw(2,0,"Press < to exit the Poke Center");
+  clear();
+  attron(A_BOLD);
+  mvprintw(0,0,"Pokemon Center");
+  attroff(A_BOLD);
+  mvprintw(MAX_ROW + 2,0,"Press < to quickly exit the Pokemon Center");
   refresh();
   return;
 }
@@ -633,12 +635,140 @@ void render_center() {
 /*
  * Renders a poke mart to the screen
  */
-void render_mart() { 
+void render_mart(int32_t action_selector, int32_t item_scroller, 
+                 int32_t page_index, int32_t amount) { 
+  int32_t i;
+  bag_slot_t tmp_slot, cursor_slot;
+  item_t tmp_item = item_empty, cursor_item;
+  char r_align[8];
+
+  /*
+   * action_selector:
+   * 0 Buy
+   * 1 Sell
+   * 2 Exit
+   */
+
   clear(); 
-  mvprintw(0,0,"***Poke Mart placeholder***");
-  mvprintw(2,0,"Press < to exit the Poke Mart");
+  attron(A_BOLD);
+  mvprintw(0,0,"Pokemon Mart");
+  attroff(A_BOLD);
+
+  mvprintw(1,2, "BUY");
+  mvprintw(2,2, "SELL");
+  mvprintw(3,2, "SEE YA!");
+
+  mvprintw(1, 20, "MONEY");
+  sprintf(r_align, "$%d", pc->get_poke_dollars());
+  mvprintw(2, 18, "%*s", 9, r_align);
+
+  if (item_scroller == -1) {
+    // no option selected
+    for (i = 0; i < 3; ++i) {
+      if (i == action_selector) {
+        mvaddch(i + 1,0, CHAR_CURSOR);
+      } else {
+        mvaddch(i + 1,0, CHAR_SCROLL_BAR);
+      }
+    }
+  } else if (action_selector == 0 && item_scroller != -1) {
+    // Selected BUY
+    mvaddch(1,0, CHAR_CURSOR_SELECTED);
+    if (amount == -1) {
+      mvprintw(5,0,"What would you like to buy?");
+    } else {
+      mvprintw(5,0,"How many?");
+    }
+    for (i = 0; (i < num_items && i < MAX_ROW - 8); ++i) {
+      tmp_item = static_cast<item_t>(i + page_index);
+      if (i == item_scroller - page_index) {
+        if (amount == -1) {
+          mvaddch(i + 6,0, CHAR_CURSOR);
+        } else {
+          mvaddch(i + 6,0, CHAR_CURSOR_SELECTED);
+          attron(A_BOLD);
+          mvaddch(i + 5, 27, '+');
+          attroff(A_BOLD);
+          sprintf(r_align, "$%d", amount * item_cost[tmp_item]);
+          mvprintw(i + 6, 26, "x%02d %*s    IN BAG: %3d", amount, 7, r_align, 
+                   pc->num_in_bag(tmp_item));
+          attron(A_BOLD);
+          mvaddch(i + 7, 27, '-');
+          attroff(A_BOLD);
+        }
+        cursor_item = static_cast<item_t>(i + page_index); 
+      } else {
+        if (amount == -1) {
+          mvaddch(i + 6,0, CHAR_SCROLL_BAR);
+        }
+      }
+      sprintf(r_align, "$%d", item_cost[tmp_item]);
+      mvprintw(i + 6, 2, "%*s | %s", 6, r_align, item_name_txt[tmp_item]);
+    }
+    mvprintw(i + 7,0, item_desc_txt[cursor_item * 2]);
+    mvprintw(i + 8,0, item_desc_txt[cursor_item * 2 + 1]);
+
+  } else if (action_selector == 1 && item_scroller != -1) {
+    // Selected SELL
+    mvaddch(2,0, CHAR_CURSOR_SELECTED);
+    if (amount == -1) {
+      mvprintw(5,0,"What would you like to sell?");
+    } else {
+      mvprintw(5,0,"How many?");
+    }
+    for (i = 0; (i < pc->num_bag_slots() && i < MAX_ROW - 8); ++i) {
+      tmp_slot = pc->peek_bag_slot(i + page_index);
+      if (i == item_scroller - page_index) {
+        if (amount == -1) {
+          mvaddch(i + 6,0, CHAR_CURSOR);
+        } else {
+          mvaddch(i + 6,0, CHAR_CURSOR_SELECTED);
+          attron(A_BOLD);
+          mvaddch(i + 5, 27, '+');
+          attroff(A_BOLD);
+          mvprintw(i + 6, 26, "x%02d %*s", amount, 7, r_align);
+          sprintf(r_align, "$%d", amount * item_sell_price[tmp_slot.item]);
+          mvprintw(i + 6, 26, "x%02d %*s    IN BAG: %3d", amount, 7, r_align, 
+                   pc->num_in_bag(tmp_slot.item));
+          attron(A_BOLD);
+          mvaddch(i + 7, 27, '-');
+          attroff(A_BOLD);
+        }
+        cursor_slot = pc->peek_bag_slot(i + page_index); 
+      } else {
+        mvaddch(i + 6,0, CHAR_SCROLL_BAR);
+      }
+      
+      sprintf(r_align, "$%d", item_sell_price[tmp_slot.item]);
+      mvprintw(i + 6, 2, "%*s | %s", 6, 
+               r_align, item_name_txt[tmp_slot.item]);
+    }
+    mvprintw(i + 7,0, item_desc_txt[cursor_slot.item * 2]);
+    mvprintw(i + 8,0, item_desc_txt[cursor_slot.item * 2 + 1]);
+  }
+
+  mvprintw(MAX_ROW + 2,0,"Press < to quickly exit the Pokemon Mart");
   refresh();
   return;
+}
+
+void render_mart_message(const char *m) {
+  move(5, 0);
+  clrtoeol();
+  printw(m);
+  refresh();
+  // redraw money
+  char r_align[8];
+  sprintf(r_align, "$%d", pc->get_poke_dollars());
+  mvprintw(2, 18, "%*s", 9, r_align);
+  // clear submenu
+  for (int32_t i = 6; i < MAX_ROW + 2; ++i) {
+    move(i, 0);
+    clrtoeol();
+  }
+
+  // also wait for keypress
+  getch_next();
 }
 
 /*
@@ -695,9 +825,7 @@ void render_tnr_overlay(int32_t scroller_pos) {
 }
 
 void render_bag_message(const char *m) {
-  int32_t i = pc->num_bag_slots() < MAX_ROW ? 
-              pc->num_bag_slots() + 2 : MAX_ROW - 2;
-  move(i, 0);
+  move(MAX_ROW - 2, 0);
   clrtoeol();
   printw(m);
   refresh();
@@ -729,10 +857,10 @@ void render_bag(int32_t page_index, int32_t scroller_pos) {
     mvprintw(i + 1, 2, "%3dx %s", s.cnt, item_name_txt[s.item]);
   }
 
-  mvprintw(i + 2,0, item_desc_txt[selected_slot.item * 2]);
-  mvprintw(i + 3,0, item_desc_txt[selected_slot.item * 2 + 1]);
+  mvprintw(i + 1,0, item_desc_txt[selected_slot.item * 2]);
+  mvprintw(i + 2,0, item_desc_txt[selected_slot.item * 2 + 1]);
 
-  mvprintw(i + 5,0,"Choose an ITEM.");
+  mvprintw(MAX_ROW + 2,0,"Choose an ITEM.");
   refresh();
   return;
 }
@@ -971,9 +1099,12 @@ void process_input_center(int32_t *exit_center) {
 /*
  * Process user input while in a mart
  */
-void process_input_mart(int32_t *exit_mart) {
+void process_input_mart(int32_t *action_selector, int32_t *item_scroller, 
+                        int32_t *page_index, int32_t *amount, 
+                        int32_t *exit_mart) {
   uint32_t no_op = 1;
   int32_t key = 0;
+  char m[MAX_COL];
 
   flushinp();
   while (no_op)  {
@@ -981,6 +1112,119 @@ void process_input_mart(int32_t *exit_mart) {
     if (CTRL_EXIT_BLDG) {
       *exit_mart = 1;
       no_op = 0;
+    } else if (CTRL_SELECT) {
+      if (*action_selector == 0 && *item_scroller == -1) {
+        *item_scroller = 0;
+        *page_index = 0;
+        no_op = 0;
+      } else if (*action_selector == 1 && *item_scroller == -1) {
+        if (pc->num_bag_slots() == 0) {
+          render_mart_message("You have no items to sell!");
+        } else {
+          *item_scroller = 0;
+          *page_index = 0;
+        }
+        no_op = 0;
+      } else if (*action_selector == 2) {
+        *exit_mart = 1;
+        no_op = 0;
+      } else if (*amount == -1) {
+        if (*action_selector == 0 
+          && pc->get_poke_dollars() < item_cost[*item_scroller]) {
+            render_mart_message("You don't have enough money.");
+        } else {
+          *amount = 1;
+        }
+        no_op = 0;
+      } else if (*amount > 0 && *action_selector == 0) {
+        sprintf(m, "You bought %d %s%c", 
+          *amount, item_name_txt[*item_scroller], *amount == 1 ? '\0' : 'S');
+        pc->add_item_to_bag(static_cast<item_t>(*item_scroller), *amount);
+        pc->take_poke_dollars(*amount * item_cost[*item_scroller]);
+        render_mart_message(m);
+        *amount = -1;
+        no_op = 0;
+      } else if (*amount > 0 && *action_selector == 1) {
+        sprintf(m, "You sold %d %s%c", 
+          *amount, item_name_txt[pc->peek_bag_slot(*item_scroller).item],
+          *amount == 1 ? '\0' : 'S');
+        pc->give_poke_dollars(
+          *amount * item_sell_price[pc->peek_bag_slot(*item_scroller).item]);
+        pc->remove_item_from_bag(pc->peek_bag_slot(*item_scroller).item, 
+          *amount);
+        render_mart_message(m);
+        if (pc->num_bag_slots() == 0) {
+          *item_scroller = -1;
+          *page_index = -1;
+          render_mart_message("You have no items to sell!");
+        } else if (*item_scroller >= pc->num_bag_slots()) {
+          *item_scroller = 0;
+          *page_index = 0;
+        }
+        *amount = -1;
+        no_op = 0;
+      }
+    } else if (CTRL_BACK) {
+      if (*amount != -1) {
+        *amount = -1;
+        no_op = 0;
+      } else if (*item_scroller != -1) {
+        *item_scroller = -1;
+        *page_index = -1;
+        no_op = 0;
+      }
+    } else if (CTRL_UP) {
+      if (*item_scroller == -1 && *action_selector > 0) {
+        --(*action_selector);
+        no_op = 0;
+      } else if (*amount == -1 && *item_scroller > 0) {
+        --(*item_scroller);
+        if (*item_scroller < *page_index)
+          --(*page_index);
+        no_op = 0;
+      } else if (*amount != -1 && *amount < 99 && 
+         (/*Buy*/(*action_selector == 0 
+       && pc->get_poke_dollars() >= ((*amount) + 1) * item_cost[*item_scroller]) 
+         || /*Sell*/(*action_selector == 1
+       && pc->peek_bag_slot(*item_scroller).cnt >= ((*amount) + 1) )
+         )) {
+        ++(*amount);
+        no_op = 0;
+      } else if (*amount == 99) {
+        *amount = 1;
+        no_op = 0;
+      } else if (*amount > 1 && *action_selector == 0) {
+        if (*amount == pc->get_poke_dollars() / item_cost[*item_scroller]) {
+          *amount = 1;
+          no_op = 0;
+        }
+      } else if (*amount > 1 && *action_selector == 1) {
+        if (*amount == pc->peek_bag_slot(*item_scroller).cnt) {
+          *amount = 1;
+          no_op = 0;
+        }
+      }
+    } else if (CTRL_DOWN) {
+      if (*item_scroller == -1 && *action_selector < 2) {
+        ++(*action_selector);
+        no_op = 0;
+      } else if (*amount == -1 && 
+         ((*item_scroller < num_items - 1 && *action_selector == 0)
+      || (*item_scroller < pc->num_bag_slots() - 1 && *action_selector == 1))) {
+        ++(*item_scroller);
+        if (*item_scroller > *page_index + (MAX_ROW - 9))
+          ++(*page_index);
+        no_op = 0;
+      } else if (*amount > 1) {
+        --(*amount);
+        no_op = 0;
+      } else if (*amount == 1 && *action_selector == 0) {
+        *amount = min(pc->get_poke_dollars() / item_cost[*item_scroller], 99);
+        no_op = 0;
+      } else if (*amount == 1 && *action_selector == 1) {
+        *amount = min(pc->peek_bag_slot(*item_scroller).cnt, 99);
+        no_op = 0;
+      }
     } else if (CTRL_QUIT_GAME) {
       quit_game();
     }
@@ -1274,10 +1518,16 @@ void center_driver() {
  */
 void mart_driver() {
   int32_t exit_mart = 0;
+  int32_t action_selector = 0;
+  int32_t item_scroller = -1;
+  int32_t page_index = -1;
+  int32_t amount = -1;
 
   while (!exit_mart) {
-    render_mart();
-    process_input_mart(&exit_mart);
+    render_mart(action_selector, item_scroller, page_index, 
+                amount);
+    process_input_mart(&action_selector, &item_scroller, &page_index, 
+                       &amount, &exit_mart);
   }
 
   return;
