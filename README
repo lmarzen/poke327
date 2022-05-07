@@ -6,21 +6,23 @@ Description
 The player can navigate procedurally generated regions, engage in trainer battles and encounter wild pokemon. Pokedex database files will be searched for 
 and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 
-TODO:
-done. Add type effectiveness
-done. Add Pokemon experience/levelup
-done. pokemon need to earn exp from defeating opponent
-done. Add Player money and trainer drop money
-done. Add different pokeball types
-done. Add pokeball catch mechanicsnew items
-done. Added 
+New Features for Assignment 1.9/2.0
+  Implemented type effectiveness.
+  Pokemon can now level up.
+  Pokemon will now learn moves opon levelup, according to thier learnset.
+  Pokemon now gain exp for fainting pokemon.
+  Added poke dollars. Trainers will now payout poke dollars on defeat. Award money scales with distance from starting region.
+  Added the following new items... Great Ball, Ultra Ball, Master Ball, 
+  Super Potion, Hyper Potion, Max Potion, Ether, Max Ether, Elixir, Max Elixir, 
+  Max Revive, Rare Candy
+  Pokeball catch mechanics are now full implemented.
+  Pokemarts now buy and sell items.
 
-Add Pokemart
-      buy/sell pokeballs
-Add Pokecenter
-      heal
-      store pokemon
-Save Game mechanic
+Future Features:
+  Add Pokecenter
+    - Heal
+    - Store Pokemon
+  Save Game mechanic
 
 Note: Status effects are not implemented, and by extension status moves are not
       implement and are programmed to always miss.
