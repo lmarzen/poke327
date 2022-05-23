@@ -6,7 +6,7 @@ Description
 The player can navigate procedurally generated regions, engage in trainer battles and encounter wild pokemon. Pokedex database files will be searched for 
 and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 
-New Features for Assignment 1.9/2.0
+New Features:
   Implemented type effectiveness.
   Pokemon can now level up.
   Pokemon will now learn moves opon levelup, according to thier learnset.
