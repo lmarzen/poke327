@@ -1,6 +1,3 @@
-from ast import Store
-
-
 Description
 ---
 The player can navigate procedurally generated regions, engage in trainer battles and encounter wild pokemon. Pokedex database files will be searched for 
