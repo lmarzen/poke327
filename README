@@ -6,7 +6,7 @@ and parsed. Game includes all pokemon in Generations I-III. Written in C++.
 New Features:
   Implemented type effectiveness.
   Pokemon can now level up.
-  Pokemon will now learn moves opon levelup, according to thier learnset.
+  Pokemon will now learn moves upon levelup, according to thier learnset.
   Pokemon now gain exp for fainting pokemon.
   Added poke dollars. Trainers will now payout poke dollars on defeat. Award money scales with distance from starting region.
   Added the following new items... Great Ball, Ultra Ball, Master Ball, 
